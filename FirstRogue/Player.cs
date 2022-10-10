@@ -6,13 +6,13 @@ namespace FirstRogue;
 
 public class Player
 {
-    private Vector3 pos = new(0, 10, 3);
+    public Vector3 Pos { get; private set; } = new(0, 0, 3);
     private float speed = 4f;
     
     private float lookY = MathF.PI, lookX;
     private readonly float minLookRad = MathHelper.ToRadians(-89f), maxLookRad = MathHelper.ToRadians(89f);
     private const float MouseSens = 0.002f;
-    
+
     public void Update(float deltaTime, KeyboardState keyState, MouseState mouseState, Point windowCenter)
     {
         Vector2 delta = mouseState.Position.ToVector2() - windowCenter.ToVector2();
@@ -59,20 +59,24 @@ public class Player
         }
 
         moveDir *= deltaTime * speed;
-            
-        pos.X += rightX * moveDir.X;
-        pos.Z += rightZ * moveDir.X;
 
-        pos.X += forwardX * moveDir.Y;
-        pos.Z += forwardZ * moveDir.Y;
+        Vector3 newPos = Pos;
+        
+        newPos.X += rightX * moveDir.X;
+        newPos.Z += rightZ * moveDir.X;
+        
+        newPos.X += forwardX * moveDir.Y;
+        newPos.Z += forwardZ * moveDir.Y;
+
+        Pos = newPos;
     }
 
     public Matrix GetViewMatrix()
     {
         var yRot = Matrix.CreateRotationY(MathHelper.WrapAngle(lookY));
         var xRot = Matrix.CreateRotationX(Math.Clamp(lookX, minLookRad, maxLookRad));
-        Vector3 lookAt = pos + Vector3.Transform(Vector3.UnitZ, xRot * yRot);
-        var view = Matrix.CreateLookAt(pos, lookAt, Vector3.Up);
+        Vector3 lookAt = Pos + Vector3.Transform(Vector3.UnitZ, xRot * yRot);
+        var view = Matrix.CreateLookAt(Pos, lookAt, Vector3.Up);
 
         return view;
     }

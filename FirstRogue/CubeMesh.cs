@@ -6,8 +6,6 @@ namespace FirstRogue;
 
 public static class CubeMesh
 {
-    // public const float UnitX = 0.25f;
-    // public const float UnitY = 0.5f;
     public const int TileSize = 16;
     public const float UnitX = 1f / TileSize;
     public const float UnitY = 1f / TileSize;

@@ -10,7 +10,7 @@ public class DrawableVoxelChunk
     
     public readonly VertexBuffer VertexBuffer;
     public int PrimitiveCount { get; private set; }
-    private VertexPositionTexture[] vertices;
+    private VertexPositionColorTexture[] vertices;
     private int vertexCount;
 
     public DrawableVoxelChunk(GraphicsDevice graphicsDevice, int width, int height, int depth)
@@ -20,8 +20,8 @@ public class DrawableVoxelChunk
         // Assuming that maximum faces in a chunk, without redundant faces, is Ceil(voxelCount/2) * 6.
         // Also account for 6 vertices per face.
         int maxVertices = (int)MathF.Ceiling(width * height * depth * 0.5f) * 6 * 6;
-        vertices = new VertexPositionTexture[maxVertices];
-        VertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionTexture), maxVertices, BufferUsage.WriteOnly);
+        vertices = new VertexPositionColorTexture[maxVertices];
+        VertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColorTexture), maxVertices, BufferUsage.WriteOnly);
     }
     
     public void GenerateMesh()
@@ -47,7 +47,7 @@ public class DrawableVoxelChunk
 
                 for (var vi = 0; vi < 6; vi++)
                 {
-                    VertexPositionTexture vertex = CubeMesh.Vertices[direction][vi];
+                    VertexPositionColorTexture vertex = CubeMesh.Vertices[direction][vi];
                     vertex.Position += voxelPos;
                     vertex.TextureCoordinate += CubeMesh.GetTexCoord(voxel);
 

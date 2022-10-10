@@ -69,14 +69,16 @@ public class Game1 : Game
         voxelEffect.Projection = projection;
         voxelEffect.TextureEnabled = true;
         voxelEffect.Texture = Texture2D.FromFile(GraphicsDevice, "Content/voxelTemplate.png");
-
+        voxelEffect.VertexColorEnabled = true;
+        
         spriteEffect = new BasicEffect(GraphicsDevice);
         spriteEffect.World = world;
         spriteEffect.Projection = projection;
         spriteEffect.TextureEnabled = true;
         spriteEffect.Texture = Texture2D.FromFile(GraphicsDevice, "Content/voxelTemplate.png");
+        spriteEffect.VertexColorEnabled = true;
 
-        spriteVertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionTexture), 6, BufferUsage.WriteOnly);
+        spriteVertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColorTexture), 6, BufferUsage.WriteOnly);
         spriteVertexBuffer.SetData(SpriteMesh.Mesh);
 
         GraphicsDevice.RasterizerState = rasterizerState;

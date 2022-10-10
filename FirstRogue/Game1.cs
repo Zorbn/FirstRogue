@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using FirstRogue.Gfx;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -11,7 +13,7 @@ public class Game1 : Game
     private SpriteBatch spriteBatch;
     
     private BasicEffect voxelEffect;
-    private BasicEffect spriteEffect;
+    private AlphaTestEffect spriteEffect;
     private VertexBuffer spriteVertexBuffer;
     
     private Matrix world;
@@ -19,13 +21,13 @@ public class Game1 : Game
 
     private readonly RasterizerState rasterizerState = new()
     {
-        // CullMode = CullMode.CullCounterClockwiseFace
-        CullMode = CullMode.None
+        CullMode = CullMode.CullCounterClockwiseFace
     };
 
     private Point windowCenter;
 
     private Player player;
+    private List<Sprite> sprites = new();
     private DrawableVoxelChunk chunk;
 
     private bool isFocused;
@@ -52,6 +54,8 @@ public class Game1 : Game
     protected override void Initialize()
     {
         player = new Player();
+        sprites.Add(new Sprite(new Vector3(-4, 0, -4)));
+        sprites.Add(new Sprite(new Vector3(-5, 0, -5)));
             
         chunk = new DrawableVoxelChunk(GraphicsDevice, 16, 16, 16);
         chunk.VoxelChunk.GenerateTerrain(new Random());
@@ -71,11 +75,10 @@ public class Game1 : Game
         voxelEffect.Texture = Texture2D.FromFile(GraphicsDevice, "Content/voxelTemplate.png");
         voxelEffect.VertexColorEnabled = true;
         
-        spriteEffect = new BasicEffect(GraphicsDevice);
+        spriteEffect = new AlphaTestEffect(GraphicsDevice);
         spriteEffect.World = world;
         spriteEffect.Projection = projection;
-        spriteEffect.TextureEnabled = true;
-        spriteEffect.Texture = Texture2D.FromFile(GraphicsDevice, "Content/voxelTemplate.png");
+        spriteEffect.Texture = Texture2D.FromFile(GraphicsDevice, "Content/entityAtlas.png");
         spriteEffect.VertexColorEnabled = true;
 
         spriteVertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColorTexture), 6, BufferUsage.WriteOnly);
@@ -138,12 +141,7 @@ public class Game1 : Game
         Matrix view = player.GetViewMatrix();
         voxelEffect.View = view;
         spriteEffect.View = view;
-
-        var spritePos = new Vector3(-4, 0, -4);
-        float angle = MathF.Atan2(player.Pos.X - spritePos.X, player.Pos.Z - spritePos.Z);
         
-        spriteEffect.World = Matrix.CreateScale(2f) * Matrix.CreateRotationY(MathHelper.WrapAngle(angle)) * Matrix.CreateTranslation(spritePos);
-
         GraphicsDevice.SetVertexBuffer(chunk.VertexBuffer);
         
         foreach (EffectPass currentTechniquePass in voxelEffect.CurrentTechnique.Passes)
@@ -154,10 +152,15 @@ public class Game1 : Game
         
         GraphicsDevice.SetVertexBuffer(spriteVertexBuffer);
         
-        foreach (EffectPass currentTechniquePass in spriteEffect.CurrentTechnique.Passes)
+        foreach (Sprite sprite in sprites)
         {
-            currentTechniquePass.Apply();
-            GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, 2);
+            spriteEffect.World = sprite.GetModelMatrix(player.Pos);
+            
+            foreach (EffectPass currentTechniquePass in spriteEffect.CurrentTechnique.Passes)
+            {
+                currentTechniquePass.Apply();
+                GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, SpriteMesh.PrimitiveCount);
+            }
         }
         
         base.Draw(gameTime);

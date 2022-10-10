@@ -1,13 +1,14 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace FirstRogue;
+namespace FirstRogue.Gfx;
 
 public static class SpriteMesh
 {
     public const int TileSize = 16;
     public const float UnitX = 1f / TileSize;
     public const float UnitY = 1f / TileSize;
+    public const int PrimitiveCount = 2;
 
     public static VertexPositionColorTexture[] Mesh =
     {

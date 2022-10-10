@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace FirstRogue;
+namespace FirstRogue.Gfx;
 
 public class DrawableVoxelChunk
 {

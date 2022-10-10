@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 
-namespace FirstRogue;
+namespace FirstRogue.Gfx;
 
 public static class GameColors
 {

@@ -27,7 +27,7 @@ public class Game1 : Game
     private Point windowCenter;
 
     private Player player;
-    private List<Sprite> sprites = new();
+    private readonly List<Sprite> sprites = new();
     private DrawableVoxelChunk chunk;
 
     private bool isFocused;
@@ -129,7 +129,7 @@ public class Game1 : Game
             
         MouseState mouseState = Mouse.GetState();
             
-        player.Update(deltaTime, keyState, mouseState, windowCenter);
+        player.Update(deltaTime, keyState, mouseState, windowCenter, chunk.VoxelChunk);
 
         base.Update(gameTime);
     }

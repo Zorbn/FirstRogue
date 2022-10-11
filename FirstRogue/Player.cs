@@ -6,14 +6,16 @@ namespace FirstRogue;
 
 public class Player
 {
-    public Vector3 Pos { get; private set; } = new(0, 0, 3);
+    public Vector3 Pos { get; private set; } = new(-4f, 0.5f, -3f);
+    public Vector3 Size { get; private set; } = new(0.8f);
+    
     private float speed = 4f;
     
     private float lookY = MathF.PI, lookX;
     private readonly float minLookRad = MathHelper.ToRadians(-89f), maxLookRad = MathHelper.ToRadians(89f);
     private const float MouseSens = 0.002f;
 
-    public void Update(float deltaTime, KeyboardState keyState, MouseState mouseState, Point windowCenter)
+    public void Update(float deltaTime, KeyboardState keyState, MouseState mouseState, Point windowCenter, VoxelChunk chunk)
     {
         Vector2 delta = mouseState.Position.ToVector2() - windowCenter.ToVector2();
         Mouse.SetPosition(windowCenter.X, windowCenter.Y);
@@ -23,15 +25,8 @@ public class Player
 
         lookX = Math.Clamp(lookX, minLookRad, maxLookRad);
         lookY = MathHelper.WrapAngle(lookY);
-            
-        float forwardX = MathF.Sin(lookY);
-        float forwardZ = MathF.Cos(lookY);
 
-        float rightDir = lookY - MathF.PI * 0.5f;
-        float rightX = MathF.Sin(rightDir);
-        float rightZ = MathF.Cos(rightDir);
-            
-        Vector2 moveDir = Vector2.Zero;
+        Vector3 moveDir = Vector3.Zero;
             
         if (keyState.IsKeyDown(Keys.A))
         {
@@ -52,23 +47,8 @@ public class Player
         {
             moveDir.Y -= 1f;
         }
-
-        if (moveDir.Length() != 0)
-        {
-            moveDir.Normalize();
-        }
-
-        moveDir *= deltaTime * speed;
-
-        Vector3 newPos = Pos;
         
-        newPos.X += rightX * moveDir.X;
-        newPos.Z += rightZ * moveDir.X;
-        
-        newPos.X += forwardX * moveDir.Y;
-        newPos.Z += forwardZ * moveDir.Y;
-
-        Pos = newPos;
+        Move(moveDir, chunk, deltaTime);
     }
 
     public Matrix GetViewMatrix()
@@ -79,5 +59,61 @@ public class Player
         var view = Matrix.CreateLookAt(Pos, lookAt, Vector3.Up);
 
         return view;
+    }
+
+    public void Move(Vector3 direction, VoxelChunk chunk, float deltaTime)
+    {
+        if (direction.Length() != 0)
+        {
+            direction.Normalize();
+        }
+
+        direction *= deltaTime * speed;
+        
+        float forwardX = MathF.Sin(lookY);
+        float forwardZ = MathF.Cos(lookY);
+
+        float rightDir = lookY - MathF.PI * 0.5f;
+        float rightX = MathF.Sin(rightDir);
+        float rightZ = MathF.Cos(rightDir);
+
+        Vector3 newPos = Pos;
+        
+        newPos.X += rightX * direction.X;
+        newPos.X += forwardX * direction.Y;
+        
+        if (IsCollidingWithVoxel(newPos, chunk))
+        {
+            newPos.X = Pos.X;
+        }
+
+        newPos.Z += rightZ * direction.X;
+        newPos.Z += forwardZ * direction.Y;
+
+        if (IsCollidingWithVoxel(newPos, chunk))
+        {
+            newPos.Z = Pos.Z;
+        }
+
+        Pos = newPos;
+    }
+
+    private bool IsCollidingWithVoxel(Vector3 at, VoxelChunk chunk)
+    {
+        for (var i = 0; i < 8; i++)
+        {
+            int xOff = i % 2 * 2 - 1;
+            int yOff = i / 4 * 2 - 1;
+            int zOff = i / 2 % 2 * 2 - 1;
+
+            Vector3 cornerPos = at + new Vector3(Size.X * 0.5f * xOff, Size.Y * 0.5f * yOff, Size.Z * 0.5f * zOff);
+
+            if (chunk.GetVoxel(cornerPos) != Voxels.Air)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

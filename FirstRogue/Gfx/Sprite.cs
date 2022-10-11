@@ -3,6 +3,8 @@ using Microsoft.Xna.Framework;
 
 namespace FirstRogue.Gfx;
 
+// TODO: Each sprite should have it's own vertex buffer copied from SpriteMesh,
+// with a sprite from the atlas.
 public class Sprite
 {
     public Vector3 Pos { get; private set; }

@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Xna.Framework;
 
 namespace FirstRogue;
 
@@ -42,5 +43,14 @@ public class VoxelChunk
         
         int vi = x + y * Width + z * Width * Height;
         return voxels[vi];
+    }
+    
+    public Voxels GetVoxel(Vector3 pos)
+    {
+        var x = (int)MathF.Floor(pos.X);
+        var y = (int)MathF.Floor(pos.Y);
+        var z = (int)MathF.Floor(pos.Z);
+
+        return GetVoxel(x, y, z);
     }
 }

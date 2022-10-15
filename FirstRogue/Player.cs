@@ -15,10 +15,11 @@ public class Player
     private readonly float minLookRad = MathHelper.ToRadians(-89f), maxLookRad = MathHelper.ToRadians(89f);
     private const float MouseSens = 0.002f;
 
-    public void Update(float deltaTime, KeyboardState keyState, MouseState mouseState, Point windowCenter, VoxelChunk chunk)
+    public void Update(float deltaTime, KeyboardState keyState, MouseState mouseState, Point lastMousePos, VoxelChunk chunk)
     {
-        Vector2 delta = mouseState.Position.ToVector2() - windowCenter.ToVector2();
-        Mouse.SetPosition(windowCenter.X, windowCenter.Y);
+        Vector2 delta = (mouseState.Position - lastMousePos).ToVector2();
+        // Console.WriteLine($"{mouseState.Position}, {lastMousePos} -> {delta}");
+        // Console.WriteLine($"{delta.X}");
 
         lookX += delta.Y * MouseSens;
         lookY -= delta.X * MouseSens;

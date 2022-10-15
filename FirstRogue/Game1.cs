@@ -29,7 +29,9 @@ public class Game1 : Game
     private readonly List<Sprite> sprites = new();
     private DrawableVoxelChunk chunk;
 
+    // TODO: Refactor stuff like this into an Input class. Eg: Mouse delta, focusing/unfocusing, clicks...
     private bool isFocused;
+    private Point lastMousePos;
         
     public Game1()
     {
@@ -37,6 +39,13 @@ public class Game1 : Game
         Content.RootDirectory = "Content";
         Window.AllowUserResizing = true;
         Window.ClientSizeChanged += OnResize;
+        
+        // Fullscreen:
+        graphics.PreferredBackBufferWidth = 1920;
+        graphics.PreferredBackBufferHeight = 1080;
+        graphics.IsFullScreen = true;
+        graphics.SynchronizeWithVerticalRetrace = false;
+        IsFixedTimeStep = false;
     }
 
     private void OnResize(object sender, EventArgs eventArgs)
@@ -46,8 +55,8 @@ public class Game1 : Game
 
     private void UpdateWindowCenter()
     {
-        windowCenter.X = GraphicsDevice.Viewport.Width / 2;
-        windowCenter.Y = GraphicsDevice.Viewport.Height / 2;
+        windowCenter.X = Window.ClientBounds.Width / 2;
+        windowCenter.Y = Window.ClientBounds.Height / 2;
     }
 
     protected override void Initialize()
@@ -100,33 +109,41 @@ public class Game1 : Game
 
     private bool IsMouseInWindow(MouseState mouseState)
     {
-        return IsActive && mouseState.X >= 0 && mouseState.Y >= 0 && mouseState.X < graphics.PreferredBackBufferWidth &&
-               mouseState.Y < graphics.PreferredBackBufferWidth;
+        return IsActive && mouseState.X >= 0 && mouseState.Y >= 0 && mouseState.X < Window.ClientBounds.Width &&
+               mouseState.Y < Window.ClientBounds.Height;
     }
 
     protected override void Update(GameTime gameTime)
     {
         var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            
+        
         KeyboardState keyState = Keyboard.GetState();
-        MouseState preMouseState = Mouse.GetState();
-            
-        if (keyState.IsKeyDown(Keys.Escape))
+        MouseState mouseState = Mouse.GetState();
+
+        if (isFocused)
+        {
+            player.Update(deltaTime, keyState, mouseState, lastMousePos, chunk.VoxelChunk);
+
+            if (Mouse.GetState().Position != windowCenter)
+            {
+                Mouse.SetPosition(windowCenter.X, windowCenter.Y);
+            }
+        }
+        
+        if (isFocused && keyState.IsKeyDown(Keys.Escape))
         {
             LockMouse(false);
         }
-
-        if (IsMouseInWindow(preMouseState) && preMouseState.LeftButton == ButtonState.Pressed)
+        
+        if (!isFocused && IsMouseInWindow(mouseState) && mouseState.LeftButton == ButtonState.Pressed)
         {
             LockMouse(true);
         }
+        
+        MouseState postMouseState = Mouse.GetState();
 
-        if (!isFocused) return;
-            
-        MouseState mouseState = Mouse.GetState();
-            
-        player.Update(deltaTime, keyState, mouseState, windowCenter, chunk.VoxelChunk);
-
+        lastMousePos = postMouseState.Position;
+        
         base.Update(gameTime);
     }
 

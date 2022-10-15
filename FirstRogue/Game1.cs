@@ -10,11 +10,10 @@ namespace FirstRogue;
 public class Game1 : Game
 {
     private GraphicsDeviceManager graphics;
-    private SpriteBatch spriteBatch;
+    // private SpriteBatch spriteBatch;
     
     private BasicEffect voxelEffect;
     private AlphaTestEffect spriteEffect;
-    private VertexBuffer spriteVertexBuffer;
     
     private Matrix world;
     private Matrix projection;
@@ -54,8 +53,8 @@ public class Game1 : Game
     protected override void Initialize()
     {
         player = new Player();
-        sprites.Add(new Sprite(new Vector3(-4, 0, -4)));
-        sprites.Add(new Sprite(new Vector3(-5, 0, -5)));
+        sprites.Add(new Sprite(GraphicsDevice, new Vector3(-4, 0, -4), 0, 0, 1, 1, 1));
+        sprites.Add(new Sprite(GraphicsDevice, new Vector3(-5, 0, -5), 0, 1, 2, 2, 2));
             
         chunk = new DrawableVoxelChunk(GraphicsDevice, 16, 16, 16);
         chunk.VoxelChunk.GenerateTerrain(new Random());
@@ -81,9 +80,6 @@ public class Game1 : Game
         spriteEffect.Texture = Texture2D.FromFile(GraphicsDevice, "Content/entityAtlas.png");
         spriteEffect.VertexColorEnabled = true;
 
-        spriteVertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColorTexture), 6, BufferUsage.WriteOnly);
-        spriteVertexBuffer.SetData(SpriteMesh.Mesh);
-
         GraphicsDevice.RasterizerState = rasterizerState;
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         
@@ -92,7 +88,7 @@ public class Game1 : Game
 
     protected override void LoadContent()
     {
-        spriteBatch = new SpriteBatch(GraphicsDevice);
+        // spriteBatch = new SpriteBatch(GraphicsDevice);
     }
 
     private void LockMouse(bool isLocked)
@@ -104,7 +100,7 @@ public class Game1 : Game
 
     private bool IsMouseInWindow(MouseState mouseState)
     {
-        return mouseState.X >= 0 && mouseState.Y >= 0 && mouseState.X < graphics.PreferredBackBufferWidth &&
+        return IsActive && mouseState.X >= 0 && mouseState.Y >= 0 && mouseState.X < graphics.PreferredBackBufferWidth &&
                mouseState.Y < graphics.PreferredBackBufferWidth;
     }
 
@@ -150,12 +146,11 @@ public class Game1 : Game
             GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, chunk.PrimitiveCount);
         }
         
-        GraphicsDevice.SetVertexBuffer(spriteVertexBuffer);
-        
         foreach (Sprite sprite in sprites)
         {
             spriteEffect.World = sprite.GetModelMatrix(player.Pos);
-            
+            GraphicsDevice.SetVertexBuffer(sprite.VertexBuffer);
+
             foreach (EffectPass currentTechniquePass in spriteEffect.CurrentTechnique.Passes)
             {
                 currentTechniquePass.Apply();

@@ -1,24 +1,41 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace FirstRogue.Gfx;
 
-// TODO: Each sprite should have it's own vertex buffer copied from SpriteMesh,
-// with a sprite from the atlas.
 public class Sprite
 {
     public Vector3 Pos { get; private set; }
+    public readonly VertexBuffer VertexBuffer;
+    public readonly float Scale;
 
-    public Sprite(Vector3 pos)
+    public Sprite(GraphicsDevice graphicsDevice, Vector3 pos, int texX, int texY, int texW, int texH, float scale)
     {
         Pos = pos;
+        Scale = scale;
+        
+        VertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColorTexture), 6, BufferUsage.WriteOnly);
+        
+        var vertexData = new VertexPositionColorTexture[SpriteMesh.Mesh.Length];
+
+        for (var i = 0; i < SpriteMesh.Mesh.Length; i++)
+        {
+            vertexData[i] = SpriteMesh.Mesh[i];
+            vertexData[i].TextureCoordinate.X *= texW;
+            vertexData[i].TextureCoordinate.Y *= texH;
+            vertexData[i].TextureCoordinate.X += SpriteMesh.UnitX * texX;
+            vertexData[i].TextureCoordinate.Y += SpriteMesh.UnitY * texY;
+        }
+        
+        VertexBuffer.SetData(vertexData);
     }
     
     public Matrix GetModelMatrix(Vector3 facingPos)
     {
         float angle = MathF.Atan2(facingPos.X - Pos.X, facingPos.Z - Pos.Z);
 
-        Matrix model = Matrix.CreateScale(1f) * Matrix.CreateRotationY(MathHelper.WrapAngle(angle)) *
+        Matrix model = Matrix.CreateScale(Scale) * Matrix.CreateRotationY(MathHelper.WrapAngle(angle)) *
                        Matrix.CreateTranslation(Pos);
         
         return model;

@@ -6,12 +6,10 @@ namespace FirstRogue.Gfx;
 
 public class DrawableVoxelChunk
 {
-    public readonly VoxelChunk VoxelChunk;
-    
     public readonly VertexBuffer VertexBuffer;
-    public int PrimitiveCount { get; private set; }
-    private VertexPositionColorTexture[] vertices;
+    public readonly VoxelChunk VoxelChunk;
     private int vertexCount;
+    private readonly VertexPositionColorTexture[] vertices;
 
     public DrawableVoxelChunk(GraphicsDevice graphicsDevice, int width, int height, int depth)
     {
@@ -21,13 +19,25 @@ public class DrawableVoxelChunk
         // Also account for 6 vertices per face.
         int maxVertices = (int)MathF.Ceiling(width * height * depth * 0.5f) * 6 * 6;
         vertices = new VertexPositionColorTexture[maxVertices];
-        VertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColorTexture), maxVertices, BufferUsage.WriteOnly);
+        VertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColorTexture), maxVertices,
+            BufferUsage.WriteOnly);
     }
-    
+
+    public int PrimitiveCount { get; private set; }
+
+    public void Update()
+    {
+        if (VoxelChunk.Changed)
+        {
+            GenerateMesh();
+            VoxelChunk.UnmarkChanged();
+        }
+    }
+
     public void GenerateMesh()
     {
         vertexCount = 0;
-        
+
         for (var z = 0; z < VoxelChunk.Depth; z++)
         for (var y = 0; y < VoxelChunk.Height; y++)
         for (var x = 0; x < VoxelChunk.Width; x++)
@@ -42,7 +52,7 @@ public class DrawableVoxelChunk
             {
                 var direction = (Directions)di;
                 Vector3 dVec = direction.ToVec();
-                
+
                 if (VoxelChunk.GetVoxel(x + (int)dVec.X, y + (int)dVec.Y, z + (int)dVec.Z) != Voxels.Air) continue;
 
                 for (var vi = 0; vi < 6; vi++)
@@ -56,7 +66,7 @@ public class DrawableVoxelChunk
                 }
             }
         }
-        
+
         VertexBuffer.SetData(vertices, 0, vertexCount);
         PrimitiveCount = vertexCount / 3;
     }

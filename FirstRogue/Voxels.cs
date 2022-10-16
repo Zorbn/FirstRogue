@@ -5,5 +5,5 @@ public enum Voxels
     Air,
     Dirt,
     Grass,
-    Marble,
+    Marble
 }

@@ -16,6 +16,7 @@ public class Game1 : Game
     private readonly List<Sprite> sprites = new();
     // TODO: Refactor to allow multiple chunks. Eg: for updating, collisions, ray-casting.
     private DrawableVoxelChunk chunk;
+    
     private GraphicsDeviceManager graphics;
     private Input input;
     
@@ -32,6 +33,7 @@ public class Game1 : Game
     public Game1()
     {
         graphics = new GraphicsDeviceManager(this);
+        graphics.GraphicsProfile = GraphicsProfile.HiDef;
         Content.RootDirectory = "Content";
         Window.AllowUserResizing = true;
         Window.ClientSizeChanged += OnResize;
@@ -117,11 +119,13 @@ public class Game1 : Game
         spriteEffect.View = view;
 
         GraphicsDevice.SetVertexBuffer(chunk.VertexBuffer);
+        GraphicsDevice.Indices = chunk.IndexBuffer;
 
         foreach (EffectPass currentTechniquePass in voxelEffect.CurrentTechnique.Passes)
         {
             currentTechniquePass.Apply();
-            GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, chunk.PrimitiveCount);
+            // GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, chunk.PrimitiveCount);
+            GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.PrimitiveCount);
         }
 
         foreach (Sprite sprite in sprites)

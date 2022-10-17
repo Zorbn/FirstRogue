@@ -19,8 +19,6 @@ public static class CubeMesh
                 new VertexPositionColorTexture(new Vector3(0, 0, 0), GameColors.Lighting5, new Vector2(UnitX, UnitY)),
                 new VertexPositionColorTexture(new Vector3(1, 0, 0), GameColors.Lighting5, new Vector2(0, UnitY)),
                 new VertexPositionColorTexture(new Vector3(1, 1, 0), GameColors.Lighting5, new Vector2(0, 0)),
-                new VertexPositionColorTexture(new Vector3(0, 0, 0), GameColors.Lighting5, new Vector2(UnitX, UnitY)),
-                new VertexPositionColorTexture(new Vector3(1, 1, 0), GameColors.Lighting5, new Vector2(0, 0)),
                 new VertexPositionColorTexture(new Vector3(0, 1, 0), GameColors.Lighting5, new Vector2(UnitX, 0))
             }
         },
@@ -32,9 +30,7 @@ public static class CubeMesh
                 new VertexPositionColorTexture(new Vector3(1, 1, 1), GameColors.Lighting2, new Vector2(UnitX, UnitY)),
                 new VertexPositionColorTexture(new Vector3(1, 0, 1), GameColors.Lighting2,
                     new Vector2(UnitX, UnitY * 2)),
-                new VertexPositionColorTexture(new Vector3(0, 0, 1), GameColors.Lighting2, new Vector2(0, UnitY * 2)),
                 new VertexPositionColorTexture(new Vector3(0, 1, 1), GameColors.Lighting2, new Vector2(0, UnitY)),
-                new VertexPositionColorTexture(new Vector3(1, 1, 1), GameColors.Lighting2, new Vector2(UnitX, UnitY))
             }
         },
         {
@@ -45,10 +41,6 @@ public static class CubeMesh
                     new Vector2(UnitX * 3, UnitY * 2)),
                 new VertexPositionColorTexture(new Vector3(1, 0, 1), GameColors.Lighting4,
                     new Vector2(UnitX * 2, UnitY * 2)),
-                new VertexPositionColorTexture(new Vector3(1, 1, 1), GameColors.Lighting4,
-                    new Vector2(UnitX * 2, UnitY)),
-                new VertexPositionColorTexture(new Vector3(1, 0, 0), GameColors.Lighting4,
-                    new Vector2(UnitX * 3, UnitY * 2)),
                 new VertexPositionColorTexture(new Vector3(1, 1, 1), GameColors.Lighting4,
                     new Vector2(UnitX * 2, UnitY)),
                 new VertexPositionColorTexture(new Vector3(1, 1, 0), GameColors.Lighting4,
@@ -64,10 +56,7 @@ public static class CubeMesh
                 new VertexPositionColorTexture(new Vector3(0, 1, 1), GameColors.Lighting3, new Vector2(UnitX * 3, 0)),
                 new VertexPositionColorTexture(new Vector3(0, 0, 1), GameColors.Lighting3,
                     new Vector2(UnitX * 3, UnitY)),
-                new VertexPositionColorTexture(new Vector3(0, 0, 0), GameColors.Lighting3,
-                    new Vector2(UnitX * 2, UnitY)),
                 new VertexPositionColorTexture(new Vector3(0, 1, 0), GameColors.Lighting3, new Vector2(UnitX * 2, 0)),
-                new VertexPositionColorTexture(new Vector3(0, 1, 1), GameColors.Lighting3, new Vector2(UnitX * 3, 0))
             }
         },
         {
@@ -77,10 +66,8 @@ public static class CubeMesh
                 new VertexPositionColorTexture(new Vector3(0, 1, 0), GameColors.Lighting6, new Vector2(UnitX, UnitY)),
                 new VertexPositionColorTexture(new Vector3(1, 1, 1), GameColors.Lighting6, new Vector2(UnitX * 2, 0)),
                 new VertexPositionColorTexture(new Vector3(0, 1, 1), GameColors.Lighting6, new Vector2(UnitX, 0)),
-                new VertexPositionColorTexture(new Vector3(0, 1, 0), GameColors.Lighting6, new Vector2(UnitX, UnitY)),
                 new VertexPositionColorTexture(new Vector3(1, 1, 0), GameColors.Lighting6,
                     new Vector2(UnitX * 2, UnitY)),
-                new VertexPositionColorTexture(new Vector3(1, 1, 1), GameColors.Lighting6, new Vector2(UnitX * 2, 0))
             }
         },
         {
@@ -92,13 +79,37 @@ public static class CubeMesh
                 new VertexPositionColorTexture(new Vector3(0, 0, 1), GameColors.Lighting1, new Vector2(UnitX, UnitY)),
                 new VertexPositionColorTexture(new Vector3(1, 0, 1), GameColors.Lighting1,
                     new Vector2(UnitX * 2, UnitY)),
-                new VertexPositionColorTexture(new Vector3(0, 0, 0), GameColors.Lighting1,
-                    new Vector2(UnitX, UnitY * 2)),
-                new VertexPositionColorTexture(new Vector3(1, 0, 1), GameColors.Lighting1,
-                    new Vector2(UnitX * 2, UnitY)),
                 new VertexPositionColorTexture(new Vector3(1, 0, 0), GameColors.Lighting1,
                     new Vector2(UnitX * 2, UnitY * 2))
             }
+        }
+    };
+    
+    public static readonly Dictionary<Directions, uint[]> Indices = new()
+    {
+        {
+            Directions.Forward,
+            new uint[] { 0, 1, 2, 0, 2, 3 }
+        },
+        {
+            Directions.Backward,
+            new uint[] { 0, 1, 2, 0, 3, 1 }
+        },
+        {
+            Directions.Right,
+            new uint[] { 0, 1, 2, 0, 2, 3 }
+        },
+        {
+            Directions.Left,
+            new uint[] { 0, 1, 2, 0, 3, 1 }
+        },
+        {
+            Directions.Up,
+            new uint[] { 0, 1, 2, 0, 3, 1 }
+        },
+        {
+            Directions.Down,
+            new uint[] { 0, 1, 2, 0, 2, 3 }
         }
     };
 

@@ -18,4 +18,18 @@ public static class DirectionExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
     }
+
+    public static int OutwardComponentI(this Directions direction)
+    {
+        return direction switch
+        {
+            Directions.Forward => 2,
+            Directions.Backward => 2,
+            Directions.Left => 0,
+            Directions.Right => 0,
+            Directions.Up => 1,
+            Directions.Down => 1,
+            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+        };
+    }
 }

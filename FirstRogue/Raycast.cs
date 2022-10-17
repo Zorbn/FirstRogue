@@ -9,41 +9,29 @@ public static class Raycast
     {
         var tileDirection = new Vector3(MathF.Sign(direction.X), MathF.Sign(direction.Y), MathF.Sign(direction.Z));
 
-        var step = new Vector3()
+        var step = new Vector3
         {
             X = MathF.Abs(1 / direction.X),
             Y = MathF.Abs(1 / direction.Y),
-            Z = MathF.Abs(1 / direction.Z),
+            Z = MathF.Abs(1 / direction.Z)
         };
 
         Vector3 initialStep;
 
         if (direction.X > 0)
-        {
             initialStep.X = (MathF.Ceiling(start.X) - start.X) * step.X;
-        }
         else
-        {
             initialStep.X = (start.X - MathF.Floor(start.X)) * step.X;
-        }
-        
+
         if (direction.Y > 0)
-        {
             initialStep.Y = (MathF.Ceiling(start.Y) - start.Y) * step.Y;
-        }
         else
-        {
             initialStep.Y = (start.Y - MathF.Floor(start.Y)) * step.Y;
-        }
-        
+
         if (direction.Z > 0)
-        {
             initialStep.Z = (MathF.Ceiling(start.Z) - start.Z) * step.Z;
-        }
         else
-        {
             initialStep.Z = (start.Z - MathF.Floor(start.Z)) * step.Z;
-        }
 
         Vector3 distanceToNext = initialStep;
         var voxelPos = new Vector3(MathF.Floor(start.X), MathF.Floor(start.Y), MathF.Floor(start.Z));

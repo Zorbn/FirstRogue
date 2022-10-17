@@ -14,12 +14,13 @@ public class Game1 : Game
     };
 
     private readonly List<Sprite> sprites = new();
+
     // TODO: Refactor to allow multiple chunks. Eg: for updating, collisions, ray-casting.
     private DrawableVoxelChunk chunk;
-    
-    private GraphicsDeviceManager graphics;
-    private Input input;
-    
+
+    private readonly GraphicsDeviceManager graphics;
+    private readonly Input input;
+
     private Player player;
     private Matrix projection;
 
@@ -27,7 +28,7 @@ public class Game1 : Game
     // private SpriteBatch spriteBatch;
 
     private BasicEffect voxelEffect;
-    
+
     private Matrix world;
 
     public Game1()

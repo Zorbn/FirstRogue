@@ -6,14 +6,14 @@ namespace FirstRogue.Gfx;
 
 public class DrawableVoxelChunk
 {
-    public readonly VertexBuffer VertexBuffer;
     public readonly IndexBuffer IndexBuffer;
-    public readonly VoxelChunk VoxelChunk;
-    private int vertexCount;
-    private int indexCount;
-    private readonly VertexPositionColorTexture[] vertices;
     private readonly uint[] indices;
-    private float[] aoBuffer = new float[4];
+    public readonly VertexBuffer VertexBuffer;
+    private readonly VertexPositionColorTexture[] vertices;
+    public readonly VoxelChunk VoxelChunk;
+    private readonly float[] aoBuffer = new float[4];
+    private int indexCount;
+    private int vertexCount;
 
     public DrawableVoxelChunk(GraphicsDevice graphicsDevice, int width, int height, int depth)
     {
@@ -24,7 +24,7 @@ public class DrawableVoxelChunk
         int maxFaces = (int)MathF.Ceiling(width * height * depth * 0.5f) * 6;
         int maxVertices = maxFaces * 4;
         int maxIndices = maxFaces * 6;
-        
+
         vertices = new VertexPositionColorTexture[maxVertices];
         VertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColorTexture), maxVertices,
             BufferUsage.WriteOnly);
@@ -65,124 +65,100 @@ public class DrawableVoxelChunk
                 Vector3 dVec = direction.ToVec();
 
                 if (VoxelChunk.GetVoxel(x + (int)dVec.X, y + (int)dVec.Y, z + (int)dVec.Z) != Voxels.Air) continue;
-                
+
                 for (var ii = 0; ii < 6; ii++)
                 {
                     indices[indexCount] = (uint)(CubeMesh.Indices[direction][ii] + vertexCount);
                     indexCount++;
                 }
-                
+
                 for (var vi = 0; vi < 4; vi++)
                 {
                     VertexPositionColorTexture vertex = CubeMesh.Vertices[direction][vi];
-
-                    /*
-                     * Experimental AO
-                     */
-
-                    Vector3 dir = vertex.Position * 2;
-                    dir.X -= 1;
-                    dir.Y -= 1;
-                    dir.Z -= 1;
-
-                    Vector3 off1, off2;
                     
-                    switch (direction)
-                    {
-                        case Directions.Forward:
-                            off1 = new Vector3(dir.X, 0, dir.Z);
-                            off2 = new Vector3(0, dir.Y, dir.Z);
-                            break;
-                        case Directions.Backward:
-                            off1 = new Vector3(dir.X, 0, dir.Z);
-                            off2 = new Vector3(0, dir.Y, dir.Z);
-                            break;
-                        case Directions.Left:
-                            off1 = new Vector3(dir.X, dir.Y, 0);
-                            off2 = new Vector3(dir.X, 0, dir.Z);
-                            break;
-                        case Directions.Right:
-                            off1 = new Vector3(dir.X, dir.Y, 0);
-                            off2 = new Vector3(dir.X, 0, dir.Z);
-                            break;
-                        case Directions.Up:
-                            off1 = new Vector3(dir.X, dir.Y, 0);
-                            off2 = new Vector3(0, dir.Y, dir.Z);
-                            break;
-                        case Directions.Down:
-                            off1 = new Vector3(dir.X, dir.Y, 0);
-                            off2 = new Vector3(0, dir.Y, dir.Z);
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
+                    VertexNeighbors neighbors = CheckVertexNeighbors(voxelPos, vertex.Position, direction);
 
-                    var ao = 0;
-
-                    bool side1 = VoxelChunk.GetVoxel(new Vector3(x, y, z) + off1) != Voxels.Air;
-                    bool side2 = VoxelChunk.GetVoxel(new Vector3(x, y, z) + off2) != Voxels.Air;
-                    bool corner = VoxelChunk.GetVoxel(new Vector3(x, y, z) + dir) != Voxels.Air;
-
-                    if (side1 && side2)
-                    {
-                        ao = 0;
-                    }
-                    else
-                    {
-                        if (side1)
-                        {
-                            ao++;
-                        }
-                    
-                        if (side2)
-                        {
-                            ao++;
-                        }
-                    
-                        if (corner)
-                        {
-                            ao++;
-                        }
-
-                        ao = 3 - ao;
-                    }
-
+                    int ao = CalculateAoLevel(neighbors);
                     aoBuffer[vi] = ao;
-
-                    float aoLightValue = ao / 3f;
-                    var aoColor = new Vector3(aoLightValue, aoLightValue, aoLightValue);
-                    var original = vertex.Color.ToVector3();
-                    vertex.Color = new Color(original * aoColor);
-                    
-                    /*
-                     * End Experimental AO
-                     */
+                    float aoLightValue = MathF.Min(ao / 3f + 0.1f, 1f);
+                    vertex.Color = new Color(vertex.Color.ToVector3() * aoLightValue);
 
                     vertex.Position += voxelPos;
                     vertex.TextureCoordinate += CubeMesh.GetTexCoord(voxel);
-                    
+
                     vertices[vertexCount] = vertex;
                     vertexCount++;
                 }
 
-                int faceStart = vertexCount - 4;
-                VertexPositionColorTexture v0 = vertices[faceStart];
-                VertexPositionColorTexture v1 = vertices[faceStart + 1];
-                VertexPositionColorTexture v2 = vertices[faceStart + 2];
-                VertexPositionColorTexture v3 = vertices[faceStart + 3];
-            
-                if (aoBuffer[0] + aoBuffer[2] < aoBuffer[1] + aoBuffer[3])
-                {
-                    vertices[faceStart] = v3;
-                    vertices[faceStart + 1] = v0;
-                    vertices[faceStart + 2] = v1;
-                    vertices[faceStart + 3] = v2;
-                }
+                OrientLastFace();
             }
         }
 
         VertexBuffer.SetData(vertices, 0, vertexCount);
         IndexBuffer.SetData(indices, 0, indexCount);
         PrimitiveCount = indexCount / 3;
+    }
+
+    private static int CalculateAoLevel(VertexNeighbors neighbors)
+    {
+        if (neighbors.Side1 && neighbors.Side2)
+        {
+            return 0;
+        }
+        
+        var occupied = 0;
+
+        if (neighbors.Side1) occupied++;
+
+        if (neighbors.Side2) occupied++;
+
+        if (neighbors.Corner) occupied++;
+
+        return 3 - occupied;
+    }
+
+    private VertexNeighbors CheckVertexNeighbors(Vector3 voxelPos, Vector3 vertexPos, Directions direction)
+    {
+        Vector3 dir = vertexPos * 2;
+        dir.X -= 1;
+        dir.Y -= 1;
+        dir.Z -= 1;
+
+        int outwardComponent = direction.OutwardComponentI();
+        Vector3 dirSide1 = dir;
+        dirSide1.SetComponent((outwardComponent + 2) % 3, 0f);
+        Vector3 dirSide2 = dir;
+        dirSide2.SetComponent((outwardComponent + 1) % 3, 0f);
+
+        return new VertexNeighbors
+        {
+            Side1 = VoxelChunk.GetVoxel(voxelPos + dirSide1) != Voxels.Air,
+            Side2 = VoxelChunk.GetVoxel(voxelPos + dirSide2) != Voxels.Air,
+            Corner = VoxelChunk.GetVoxel(voxelPos + dir) != Voxels.Air
+        };
+    }
+
+    // Ensure that color interpolation will be correct for the most recent face.
+    private void OrientLastFace()
+    {
+        int faceStart = vertexCount - 4;
+        VertexPositionColorTexture v0 = vertices[faceStart];
+        VertexPositionColorTexture v1 = vertices[faceStart + 1];
+        VertexPositionColorTexture v2 = vertices[faceStart + 2];
+        VertexPositionColorTexture v3 = vertices[faceStart + 3];
+
+        if (!(aoBuffer[0] + aoBuffer[2] < aoBuffer[1] + aoBuffer[3])) return;
+        
+        vertices[faceStart] = v3;
+        vertices[faceStart + 1] = v0;
+        vertices[faceStart + 2] = v1;
+        vertices[faceStart + 3] = v2;
+    }
+
+    private struct VertexNeighbors
+    {
+        public bool Side1;
+        public bool Side2;
+        public bool Corner;
     }
 }

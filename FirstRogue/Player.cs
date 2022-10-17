@@ -9,9 +9,9 @@ public class Player
     private const float MouseSens = 0.002f;
     private readonly float minLookRad = MathHelper.ToRadians(-89f), maxLookRad = MathHelper.ToRadians(89f);
 
-    private float lookY = MathF.PI, lookX;
-
     private readonly float speed = 4f;
+
+    private float lookY = MathF.PI, lookX;
     public Vector3 Pos { get; private set; } = new(-4f, 0.5f, -3f);
     public Vector3 Size { get; } = new(0.8f);
 
@@ -33,7 +33,7 @@ public class Player
         if (input.IsKeyDown(Keys.W)) moveDir.Z += 1f;
 
         if (input.IsKeyDown(Keys.S)) moveDir.Z -= 1f;
-        
+
         if (input.IsKeyDown(Keys.Space)) moveDir.Y += 1f;
 
         if (input.IsKeyDown(Keys.LeftShift)) moveDir.Y -= 1f;
@@ -89,7 +89,7 @@ public class Player
         if (IsCollidingWithVoxel(newPos, chunk)) newPos.Z = Pos.Z;
 
         newPos.Y += direction.Y;
-        
+
         if (IsCollidingWithVoxel(newPos, chunk)) newPos.Y = Pos.Y;
 
         Pos = newPos;

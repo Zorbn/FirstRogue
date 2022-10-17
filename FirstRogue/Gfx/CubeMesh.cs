@@ -56,7 +56,7 @@ public static class CubeMesh
                 new VertexPositionColorTexture(new Vector3(0, 0, 1), GameColors.Lighting3,
                     new Vector2(UnitX * 3, UnitY)),
                 new VertexPositionColorTexture(new Vector3(0, 1, 1), GameColors.Lighting3, new Vector2(UnitX * 3, 0)),
-                new VertexPositionColorTexture(new Vector3(0, 1, 0), GameColors.Lighting3, new Vector2(UnitX * 2, 0)),
+                new VertexPositionColorTexture(new Vector3(0, 1, 0), GameColors.Lighting3, new Vector2(UnitX * 2, 0))
             }
         },
         {
@@ -67,7 +67,7 @@ public static class CubeMesh
                 new VertexPositionColorTexture(new Vector3(0, 1, 1), GameColors.Lighting6, new Vector2(UnitX, 0)),
                 new VertexPositionColorTexture(new Vector3(1, 1, 1), GameColors.Lighting6, new Vector2(UnitX * 2, 0)),
                 new VertexPositionColorTexture(new Vector3(1, 1, 0), GameColors.Lighting6,
-                    new Vector2(UnitX * 2, UnitY)),
+                    new Vector2(UnitX * 2, UnitY))
             }
         },
         {
@@ -84,7 +84,7 @@ public static class CubeMesh
             }
         }
     };
-    
+
     public static readonly Dictionary<Directions, uint[]> Indices = new()
     {
         {

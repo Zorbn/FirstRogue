@@ -10,7 +10,6 @@ public class VoxelChunk
 
     private readonly Voxels[] voxels;
     public readonly int Width;
-    public bool Changed { get; private set; }
 
     public VoxelChunk(int width, int height, int depth)
     {
@@ -19,6 +18,8 @@ public class VoxelChunk
         Depth = depth;
         voxels = new Voxels[width * height * depth];
     }
+
+    public bool Changed { get; private set; }
 
     public void GenerateTerrain(Random random)
     {
@@ -36,13 +37,13 @@ public class VoxelChunk
         voxels[vi] = voxel;
         Changed = true;
     }
-    
+
     public void SetVoxel(Vector3 pos, Voxels voxel)
     {
         var x = (int)MathF.Floor(pos.X);
         var y = (int)MathF.Floor(pos.Y);
         var z = (int)MathF.Floor(pos.Z);
-        
+
         SetVoxel(x, y, z, voxel);
     }
 

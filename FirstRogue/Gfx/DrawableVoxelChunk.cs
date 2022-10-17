@@ -13,6 +13,7 @@ public class DrawableVoxelChunk
     private int indexCount;
     private readonly VertexPositionColorTexture[] vertices;
     private readonly uint[] indices;
+    private float[] aoBuffer = new float[4];
 
     public DrawableVoxelChunk(GraphicsDevice graphicsDevice, int width, int height, int depth)
     {
@@ -70,15 +71,13 @@ public class DrawableVoxelChunk
                     indices[indexCount] = (uint)(CubeMesh.Indices[direction][ii] + vertexCount);
                     indexCount++;
                 }
-
-                var aoVals = new float[4];
                 
                 for (var vi = 0; vi < 4; vi++)
                 {
                     VertexPositionColorTexture vertex = CubeMesh.Vertices[direction][vi];
 
                     /*
-                     * (Bad) Experimental AO
+                     * Experimental AO
                      */
 
                     Vector3 dir = vertex.Position * 2;
@@ -118,7 +117,7 @@ public class DrawableVoxelChunk
                             throw new ArgumentOutOfRangeException();
                     }
 
-                    int ao = 0;
+                    var ao = 0;
 
                     bool side1 = VoxelChunk.GetVoxel(new Vector3(x, y, z) + off1) != Voxels.Air;
                     bool side2 = VoxelChunk.GetVoxel(new Vector3(x, y, z) + off2) != Voxels.Air;
@@ -144,15 +143,15 @@ public class DrawableVoxelChunk
                         {
                             ao++;
                         }
-                    
-                        ao = Math.Max(3 - ao, 0);
+
+                        ao = 3 - ao;
                     }
 
-                    aoVals[vi] = ao;
+                    aoBuffer[vi] = ao;
 
-                    float aoLightValue = Math.Clamp(ao / 3f, 0f, 1f);
-                    Vector3 aoColor = new Vector3(aoLightValue, aoLightValue, aoLightValue);
-                    Vector3 original = vertex.Color.ToVector3();
+                    float aoLightValue = ao / 3f;
+                    var aoColor = new Vector3(aoLightValue, aoLightValue, aoLightValue);
+                    var original = vertex.Color.ToVector3();
                     vertex.Color = new Color(original * aoColor);
                     
                     /*
@@ -166,24 +165,18 @@ public class DrawableVoxelChunk
                     vertexCount++;
                 }
 
-                // if (direction == Directions.Up)
+                int faceStart = vertexCount - 4;
+                VertexPositionColorTexture v0 = vertices[faceStart];
+                VertexPositionColorTexture v1 = vertices[faceStart + 1];
+                VertexPositionColorTexture v2 = vertices[faceStart + 2];
+                VertexPositionColorTexture v3 = vertices[faceStart + 3];
+            
+                if (aoBuffer[0] + aoBuffer[2] < aoBuffer[1] + aoBuffer[3])
                 {
-                    int faceStart = vertexCount - 4;
-                    VertexPositionColorTexture v0 = vertices[faceStart];
-                    VertexPositionColorTexture v1 = vertices[faceStart + 1];
-                    VertexPositionColorTexture v2 = vertices[faceStart + 2];
-                    VertexPositionColorTexture v3 = vertices[faceStart + 3];
-
-                    if (aoVals[2] + aoVals[3] > aoVals[0] + aoVals[1])
-                    {
-
-                        // TODO: Only flip when necessary.
-                        // TODO: Make this work for all faces, may require making vertices 0, 1, 2, 3 have a consistent order across each face.
-                        vertices[faceStart] = v3;
-                        vertices[faceStart + 1] = v2;
-                        vertices[faceStart + 2] = v0;
-                        vertices[faceStart + 3] = v1;
-                    }
+                    vertices[faceStart] = v3;
+                    vertices[faceStart + 1] = v0;
+                    vertices[faceStart + 2] = v1;
+                    vertices[faceStart + 3] = v2;
                 }
             }
         }

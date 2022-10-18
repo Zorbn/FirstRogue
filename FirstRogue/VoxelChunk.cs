@@ -26,7 +26,13 @@ public class VoxelChunk
         for (var z = 0; z < Depth; z++)
         for (var y = 0; y < Height; y++)
         for (var x = 0; x < Width; x++)
-            SetVoxel(x, y, z, (Voxels)random.Next(0, 4));
+        {
+            int voxelI = random.Next(0, 4);
+
+            if (y == Height - 1) voxelI = 2;
+            
+            SetVoxel(x, y, z, (Voxels)voxelI);
+        }
     }
 
     public void SetVoxel(int x, int y, int z, Voxels voxel)

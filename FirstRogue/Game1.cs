@@ -15,7 +15,7 @@ public class Game1 : Game
 
     private readonly List<Sprite> sprites = new();
 
-    // TODO: Refactor to allow multiple chunks. Eg: for updating, collisions, ray-casting.
+    // TODO: Refactor to allow multiple chunks. Eg: for updating, collisions, ray-casting, GetVoxel/SetVoxel.
     private DrawableVoxelChunk chunk;
 
     private readonly GraphicsDeviceManager graphics;
@@ -115,7 +115,7 @@ public class Game1 : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        Matrix view = player.GetViewMatrix();
+        Matrix view = player.GetViewMatrix();       
         voxelEffect.View = view;
         spriteEffect.View = view;
 
@@ -125,7 +125,6 @@ public class Game1 : Game
         foreach (EffectPass currentTechniquePass in voxelEffect.CurrentTechnique.Passes)
         {
             currentTechniquePass.Apply();
-            // GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, chunk.PrimitiveCount);
             GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.PrimitiveCount);
         }
 

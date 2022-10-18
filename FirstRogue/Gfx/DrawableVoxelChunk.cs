@@ -75,6 +75,9 @@ public class DrawableVoxelChunk
                 for (var vi = 0; vi < 4; vi++)
                 {
                     VertexPositionColorTexture vertex = CubeMesh.Vertices[direction][vi];
+
+                    float variance = GameRandom.GradientNoise(x, y, z) * 0.2f + 0.8f;
+                    vertex.Color = new Color(vertex.Color.ToVector3() * variance);
                     
                     VertexNeighbors neighbors = CheckVertexNeighbors(voxelPos, vertex.Position, direction);
 
@@ -147,7 +150,7 @@ public class DrawableVoxelChunk
         VertexPositionColorTexture v2 = vertices[faceStart + 2];
         VertexPositionColorTexture v3 = vertices[faceStart + 3];
 
-        if (!(aoBuffer[0] + aoBuffer[2] < aoBuffer[1] + aoBuffer[3])) return;
+        if (aoBuffer[0] + aoBuffer[2] > aoBuffer[1] + aoBuffer[3]) return;
         
         vertices[faceStart] = v3;
         vertices[faceStart + 1] = v0;

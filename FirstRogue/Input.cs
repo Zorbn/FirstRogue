@@ -28,7 +28,7 @@ public class Input
         IsFocused = isLocked;
     }
 
-    public bool IsMouseInWindow(Game game, MouseState mouseState)
+    public static bool IsMouseInWindow(Game game, MouseState mouseState)
     {
         return game.IsActive && mouseState.X >= 0 && mouseState.Y >= 0 &&
                mouseState.X < game.Window.ClientBounds.Width &&
@@ -101,7 +101,7 @@ public class Input
                CheckMouseState(previousMouseState, mouseButton, ButtonState.Released);
     }
 
-    private bool CheckMouseState(MouseState mouseState, MouseButtons mouseButton, ButtonState buttonState)
+    private static bool CheckMouseState(MouseState mouseState, MouseButtons mouseButton, ButtonState buttonState)
     {
         return mouseButton switch
         {

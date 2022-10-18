@@ -15,7 +15,7 @@ public class Player
     public Vector3 Pos { get; private set; } = new(-4f, 0.5f, -3f);
     public Vector3 Size { get; } = new(0.8f);
 
-    public void Update(float deltaTime, Input input, VoxelChunk chunk)
+    public void Update(float deltaTime, Input input, World world)
     {
         Vector2 mouseDelta = input.MouseDelta;
         lookX += mouseDelta.Y * MouseSens;
@@ -38,12 +38,12 @@ public class Player
 
         if (input.IsKeyDown(Keys.LeftShift)) moveDir.Y -= 1f;
 
-        Move(moveDir, chunk, deltaTime);
+        Move(moveDir, world, deltaTime);
 
         if (input.WasMouseButtonPressed(MouseButtons.Left))
         {
-            Hit hit = Raycast.Cast(chunk, Pos, GetLookVector(), 10f);
-            chunk.SetVoxel(hit.Pos, Voxels.Air);
+            Hit hit = Raycast.Cast(world, Pos, GetLookVector(), 10f);
+            world.SetVoxel(hit.Pos, Voxels.Air);
         }
     }
 
@@ -63,7 +63,7 @@ public class Player
         return view;
     }
 
-    public void Move(Vector3 direction, VoxelChunk chunk, float deltaTime)
+    public void Move(Vector3 direction, World world, float deltaTime)
     {
         if (direction.Length() != 0) direction.Normalize();
 
@@ -81,21 +81,21 @@ public class Player
         newPos.X += rightX * direction.X;
         newPos.X += forwardX * direction.Z;
 
-        if (IsCollidingWithVoxel(newPos, chunk)) newPos.X = Pos.X;
+        if (IsCollidingWithVoxel(newPos, world)) newPos.X = Pos.X;
 
         newPos.Z += rightZ * direction.X;
         newPos.Z += forwardZ * direction.Z;
 
-        if (IsCollidingWithVoxel(newPos, chunk)) newPos.Z = Pos.Z;
+        if (IsCollidingWithVoxel(newPos, world)) newPos.Z = Pos.Z;
 
         newPos.Y += direction.Y;
 
-        if (IsCollidingWithVoxel(newPos, chunk)) newPos.Y = Pos.Y;
+        if (IsCollidingWithVoxel(newPos, world)) newPos.Y = Pos.Y;
 
         Pos = newPos;
     }
 
-    private bool IsCollidingWithVoxel(Vector3 at, VoxelChunk chunk)
+    private bool IsCollidingWithVoxel(Vector3 at, World world)
     {
         for (var i = 0; i < 8; i++)
         {
@@ -105,7 +105,7 @@ public class Player
 
             Vector3 cornerPos = at + new Vector3(Size.X * 0.5f * xOff, Size.Y * 0.5f * yOff, Size.Z * 0.5f * zOff);
 
-            if (chunk.GetVoxel(cornerPos) != Voxels.Air) return true;
+            if (world.GetVoxel(cornerPos) != Voxels.Air) return true;
         }
 
         return false;

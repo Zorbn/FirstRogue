@@ -10,14 +10,16 @@ public class DrawableVoxelChunk
     private readonly uint[] indices;
     public readonly VertexBuffer VertexBuffer;
     private readonly VertexPositionColorTexture[] vertices;
-    public readonly VoxelChunk VoxelChunk;
     private readonly float[] aoBuffer = new float[4];
+    private readonly int chunkX, chunkY, chunkZ;
     private int indexCount;
     private int vertexCount;
 
-    public DrawableVoxelChunk(GraphicsDevice graphicsDevice, int width, int height, int depth)
+    public DrawableVoxelChunk(GraphicsDevice graphicsDevice, int width, int height, int depth, int chunkX, int chunkY, int chunkZ)
     {
-        VoxelChunk = new VoxelChunk(width, height, depth);
+        this.chunkX = chunkX;
+        this.chunkY = chunkY;
+        this.chunkZ = chunkZ;
 
         // Assuming that maximum faces in a chunk, without redundant faces, is Ceil(voxelCount/2) * 6.
         // Also account for 4 vertices per face and 6 indices per face.
@@ -35,36 +37,41 @@ public class DrawableVoxelChunk
 
     public int PrimitiveCount { get; private set; }
 
-    public void Update()
+    public void Update(World world)
     {
-        if (VoxelChunk.Changed)
+        VoxelChunk voxelChunk = world.GetChunk(chunkX, chunkY, chunkZ);
+        
+        if (voxelChunk.Changed)
         {
-            GenerateMesh();
-            VoxelChunk.UnmarkChanged();
+            GenerateMesh(world, voxelChunk);
+            voxelChunk.UnmarkChanged();
         }
     }
 
-    public void GenerateMesh()
+    public void GenerateMesh(World world, VoxelChunk voxelChunk)
     {
         vertexCount = 0;
         indexCount = 0;
 
-        for (var z = 0; z < VoxelChunk.Depth; z++)
-        for (var y = 0; y < VoxelChunk.Height; y++)
-        for (var x = 0; x < VoxelChunk.Width; x++)
+        for (var z = 0; z < voxelChunk.Depth; z++)
+        for (var y = 0; y < voxelChunk.Height; y++)
+        for (var x = 0; x < voxelChunk.Width; x++)
         {
-            Voxels voxel = VoxelChunk.GetVoxel(x, y, z);
+            Voxels voxel = voxelChunk.GetVoxel(x, y, z);
 
             if (voxel == Voxels.Air) continue;
 
-            var voxelPos = new Vector3(x, y, z);
+            int worldX = x + chunkX * voxelChunk.Width;
+            int worldY = y + chunkY * voxelChunk.Height;
+            int worldZ = z + chunkZ * voxelChunk.Depth;
+            var voxelWorldPos = new Vector3(worldX, worldY, worldZ);
 
             for (var di = 0; di < 6; di++)
             {
                 var direction = (Directions)di;
                 Vector3 dVec = direction.ToVec();
 
-                if (VoxelChunk.GetVoxel(x + (int)dVec.X, y + (int)dVec.Y, z + (int)dVec.Z) != Voxels.Air) continue;
+                if (world.GetVoxel(voxelWorldPos + dVec) != Voxels.Air) continue;
 
                 for (var ii = 0; ii < 6; ii++)
                 {
@@ -76,17 +83,17 @@ public class DrawableVoxelChunk
                 {
                     VertexPositionColorTexture vertex = CubeMesh.Vertices[direction][vi];
 
-                    float variance = GameRandom.GradientNoise(x, y, z) * 0.2f + 0.8f;
+                    float variance = GameRandom.GradientNoise(worldX, worldY, worldZ) * 0.2f + 0.8f;
                     vertex.Color = new Color(vertex.Color.ToVector3() * variance);
                     
-                    VertexNeighbors neighbors = CheckVertexNeighbors(voxelPos, vertex.Position, direction);
-
+                    VertexNeighbors neighbors = CheckVertexNeighbors(world, voxelWorldPos, vertex.Position, direction);
+                    
                     int ao = CalculateAoLevel(neighbors);
                     aoBuffer[vi] = ao;
                     float aoLightValue = MathF.Min(ao / 3f + 0.1f, 1f);
                     vertex.Color = new Color(vertex.Color.ToVector3() * aoLightValue);
 
-                    vertex.Position += voxelPos;
+                    vertex.Position += voxelWorldPos;
                     vertex.TextureCoordinate += CubeMesh.GetTexCoord(voxel);
 
                     vertices[vertexCount] = vertex;
@@ -120,7 +127,7 @@ public class DrawableVoxelChunk
         return 3 - occupied;
     }
 
-    private VertexNeighbors CheckVertexNeighbors(Vector3 voxelPos, Vector3 vertexPos, Directions direction)
+    private VertexNeighbors CheckVertexNeighbors(World world, Vector3 voxelWorldPos, Vector3 vertexPos, Directions direction)
     {
         Vector3 dir = vertexPos * 2;
         dir.X -= 1;
@@ -135,9 +142,9 @@ public class DrawableVoxelChunk
 
         return new VertexNeighbors
         {
-            Side1 = VoxelChunk.GetVoxel(voxelPos + dirSide1) != Voxels.Air,
-            Side2 = VoxelChunk.GetVoxel(voxelPos + dirSide2) != Voxels.Air,
-            Corner = VoxelChunk.GetVoxel(voxelPos + dir) != Voxels.Air
+            Side1 = world.GetVoxel(voxelWorldPos + dirSide1) != Voxels.Air,
+            Side2 = world.GetVoxel(voxelWorldPos + dirSide2) != Voxels.Air,
+            Corner = world.GetVoxel(voxelWorldPos + dir) != Voxels.Air
         };
     }
 

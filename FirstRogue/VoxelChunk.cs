@@ -74,4 +74,9 @@ public class VoxelChunk
     {
         Changed = false;
     }
+    
+    public void MarkChanged()
+    {
+        Changed = true;
+    }
 }

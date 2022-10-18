@@ -5,7 +5,7 @@ namespace FirstRogue;
 
 public static class Raycast
 {
-    public static Hit Cast(VoxelChunk chunk, Vector3 start, Vector3 direction, float range)
+    public static Hit Cast(World world, Vector3 start, Vector3 direction, float range)
     {
         var tileDirection = new Vector3(MathF.Sign(direction.X), MathF.Sign(direction.Y), MathF.Sign(direction.Z));
 
@@ -67,7 +67,7 @@ public static class Raycast
                 lastStep = step.Z;
             }
 
-            hitVoxel = chunk.GetVoxel(voxelPos);
+            hitVoxel = world.GetVoxel(voxelPos);
         }
 
         return new Hit

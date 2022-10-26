@@ -76,7 +76,6 @@ public class Game1 : Game
         input.UpdateWindowCenter(this);
         input.LockMouse(this, true);
 
-        UpdateCameraProjection();
         worldMatrix = Matrix.Identity + Matrix.CreateTranslation(0, 0, 0);
 
         voxelEffect = new BasicEffect(GraphicsDevice);
@@ -89,6 +88,8 @@ public class Game1 : Game
         spriteEffect.World = worldMatrix;
         spriteEffect.Texture = Texture2D.FromFile(GraphicsDevice, "Content/entityAtlas.png");
         spriteEffect.VertexColorEnabled = true;
+        
+        UpdateCameraProjection();
 
         GraphicsDevice.RasterizerState = rasterizerState;
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;

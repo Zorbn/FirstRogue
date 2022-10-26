@@ -7,9 +7,9 @@ public class VoxelChunk
 {
     public readonly int Depth;
     public readonly int Height;
+    public readonly int Width;
 
     private readonly Voxels[] voxels;
-    public readonly int Width;
 
     public VoxelChunk(int width, int height, int depth)
     {

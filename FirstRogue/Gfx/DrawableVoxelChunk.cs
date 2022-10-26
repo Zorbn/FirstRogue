@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -15,11 +16,16 @@ public class DrawableVoxelChunk
     private int indexCount;
     private int vertexCount;
 
+    private const float NoiseMin = 0.8f;
+    private readonly float[] noise;
+
     public DrawableVoxelChunk(GraphicsDevice graphicsDevice, int width, int height, int depth, int chunkX, int chunkY, int chunkZ)
     {
         this.chunkX = chunkX;
         this.chunkY = chunkY;
         this.chunkZ = chunkZ;
+        
+        noise = new float[(width + 2) * (height + 2) * (depth + 2)];
 
         // Assuming that maximum faces in a chunk, without redundant faces, is Ceil(voxelCount/2) * 6.
         // Also account for 4 vertices per face and 6 indices per face.
@@ -43,7 +49,10 @@ public class DrawableVoxelChunk
         
         if (voxelChunk.Changed)
         {
+            var sw = new Stopwatch();
+            sw.Start();
             GenerateMesh(world, voxelChunk);
+            Console.WriteLine(sw.Elapsed.TotalMilliseconds);
             voxelChunk.UnmarkChanged();
         }
     }
@@ -83,7 +92,14 @@ public class DrawableVoxelChunk
                 {
                     VertexPositionColorTexture vertex = CubeMesh.Vertices[direction][vi];
 
-                    float variance = GameRandom.GradientNoise(worldX, worldY, worldZ) * 0.2f + 0.8f;
+                    int noiseI = (x + 1) + (y + 1) * voxelChunk.Width + (z + 1) * voxelChunk.Width * voxelChunk.Height;
+                    float variance = noise[noiseI];
+                    if (variance == 0f)
+                    {
+                        variance = GameRandom.GradientNoise(worldX, worldY, worldZ) * 0.2f + NoiseMin;
+                        noise[noiseI] = variance;
+                    }
+
                     vertex.Color = new Color(vertex.Color.ToVector3() * variance);
                     
                     VertexNeighbors neighbors = CheckVertexNeighbors(world, voxelWorldPos, vertex.Position, direction);

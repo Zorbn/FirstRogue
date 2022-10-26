@@ -51,6 +51,15 @@ public class Game1 : Game
     private void OnResize(object sender, EventArgs eventArgs)
     {
         input.UpdateWindowCenter(this);
+        UpdateCameraProjection();
+    }
+
+    private void UpdateCameraProjection()
+    {
+        projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(90f),
+            GraphicsDevice.Viewport.Width / (float)GraphicsDevice.Viewport.Height, 0.01f, 100f);
+        voxelEffect.Projection = projection;
+        spriteEffect.Projection = projection;
     }
 
     protected override void Initialize()
@@ -67,20 +76,17 @@ public class Game1 : Game
         input.UpdateWindowCenter(this);
         input.LockMouse(this, true);
 
+        UpdateCameraProjection();
         worldMatrix = Matrix.Identity + Matrix.CreateTranslation(0, 0, 0);
-        projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(90f),
-            GraphicsDevice.Viewport.Width / (float)GraphicsDevice.Viewport.Height, 0.01f, 100f);
 
         voxelEffect = new BasicEffect(GraphicsDevice);
         voxelEffect.World = worldMatrix;
-        voxelEffect.Projection = projection;
         voxelEffect.TextureEnabled = true;
         voxelEffect.Texture = Texture2D.FromFile(GraphicsDevice, "Content/voxelTemplate.png");
         voxelEffect.VertexColorEnabled = true;
 
         spriteEffect = new AlphaTestEffect(GraphicsDevice);
         spriteEffect.World = worldMatrix;
-        spriteEffect.Projection = projection;
         spriteEffect.Texture = Texture2D.FromFile(GraphicsDevice, "Content/entityAtlas.png");
         spriteEffect.VertexColorEnabled = true;
 

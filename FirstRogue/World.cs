@@ -58,7 +58,7 @@ public class World
 
         return Chunks[i];
     }
-
+    
     public void SetVoxel(int x, int y, int z, Voxels voxel)
     {
         if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth) return;
@@ -96,9 +96,9 @@ public class World
 
     public void SetVoxel(Vector3 pos, Voxels voxel)
     {
-        var x = (int)MathF.Floor(pos.X);
-        var y = (int)MathF.Floor(pos.Y);
-        var z = (int)MathF.Floor(pos.Z);
+        var x = (int)pos.X;
+        var y = (int)pos.Y;
+        var z = (int)pos.Z;
 
         SetVoxel(x, y, z, voxel);
     }
@@ -120,9 +120,9 @@ public class World
 
     public Voxels GetVoxel(Vector3 pos)
     {
-        var x = (int)MathF.Floor(pos.X);
-        var y = (int)MathF.Floor(pos.Y);
-        var z = (int)MathF.Floor(pos.Z);
+        var x = (int)pos.X;
+        var y = (int)pos.Y;
+        var z = (int)pos.Z;
 
         return GetVoxel(x, y, z);
     }

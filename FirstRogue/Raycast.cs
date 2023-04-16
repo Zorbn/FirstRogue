@@ -35,6 +35,7 @@ public static class Raycast
 
         Vector3 distanceToNext = initialStep;
         var voxelPos = new Vector3(MathF.Floor(start.X), MathF.Floor(start.Y), MathF.Floor(start.Z));
+        var lastPos = voxelPos;
 
         float lastDistanceToNext = distanceToNext.X;
         float lastStep = step.X;
@@ -42,6 +43,8 @@ public static class Raycast
         var hitVoxel = Voxels.Air;
         while (hitVoxel == Voxels.Air && lastDistanceToNext - lastStep < range)
         {
+            lastPos = voxelPos;
+            
             if (distanceToNext.X < distanceToNext.Y && distanceToNext.X < distanceToNext.Z)
             {
                 distanceToNext.X += step.X;
@@ -74,7 +77,8 @@ public static class Raycast
         {
             Distance = lastDistanceToNext - lastStep,
             Voxel = hitVoxel,
-            Pos = voxelPos
+            Pos = voxelPos,
+            LastPos = lastPos
         };
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -10,11 +9,15 @@ public class DrawableVoxelChunk
     public readonly IndexBuffer IndexBuffer;
     private readonly uint[] indices;
     public readonly VertexBuffer VertexBuffer;
+    public bool NeedsSwap { get; private set; }
+    public int Lod { get; private set; }
+
     private readonly VertexPositionColorTexture[] vertices;
     private readonly float[] aoBuffer = new float[4];
     private readonly int chunkX, chunkY, chunkZ;
     private int indexCount;
     private int vertexCount;
+    private int currentVertexBuffer;
 
     private const float NoiseMin = 0.8f;
     private readonly float[] noise;
@@ -24,12 +27,14 @@ public class DrawableVoxelChunk
         this.chunkX = chunkX;
         this.chunkY = chunkY;
         this.chunkZ = chunkZ;
-        
+
         noise = new float[(width + 2) * (height + 2) * (depth + 2)];
 
         // Assuming that maximum faces in a chunk, without redundant faces, is Ceil(voxelCount/2) * 6.
+        // Then add the possible edge faces if this chunk is at an LOD border.
         // Also account for 4 vertices per face and 6 indices per face.
-        int maxFaces = (int)MathF.Ceiling(width * height * depth * 0.5f) * 6;
+        int maxFaces = (int)MathF.Ceiling(width * height * depth * 0.5f) * 6 
+                       + width * height * 2 + width * depth * 2 + depth * height * 2;
         int maxVertices = maxFaces * 4;
         int maxIndices = maxFaces * 6;
 
@@ -43,28 +48,77 @@ public class DrawableVoxelChunk
 
     public int PrimitiveCount { get; private set; }
 
-    public void Update(World world)
+    public void Update(DrawableWorld drawableWorld, int cameraX, int cameraY, int cameraZ)
     {
-        VoxelChunk voxelChunk = world.GetChunk(chunkX, chunkY, chunkZ);
-        
-        if (voxelChunk.Changed)
+        VoxelChunk voxelChunk = drawableWorld.World.GetChunk(chunkX, chunkY, chunkZ);
+        int newLod = GetLod(cameraX, cameraY, cameraZ, chunkX, chunkY,
+            chunkZ, voxelChunk.Width, voxelChunk.Height, voxelChunk.Depth);
+
+        if (newLod != Lod)
         {
-            var sw = new Stopwatch();
-            sw.Start();
-            GenerateMesh(world, voxelChunk);
-            Console.WriteLine(sw.Elapsed.TotalMilliseconds);
+            Console.WriteLine($"Needs new lod {Lod} -> {newLod}");
+            Lod = newLod;
+            voxelChunk.MarkChanged();
+        }
+
+        if (voxelChunk.Changed && !NeedsSwap)
+        {
+            GenerateMesh(drawableWorld, voxelChunk);
             voxelChunk.UnmarkChanged();
         }
     }
 
-    public void GenerateMesh(World world, VoxelChunk voxelChunk)
+    private bool CanCullFace(DrawableWorld drawableWorld, VoxelChunk voxelChunk, Vector3 voxelWorldPos,
+        int x, int y, int z, Directions direction, int stepSize)
+    {
+        Vector3 dVec = direction.ToVec();
+
+        bool onBorder = direction switch
+        {
+            Directions.Forward => z == 0,
+            Directions.Backward => z + stepSize >= voxelChunk.Depth,
+            Directions.Left => x == 0,
+            Directions.Right => x + stepSize >= voxelChunk.Width,
+            Directions.Up => y + stepSize >= voxelChunk.Height,
+            Directions.Down => y == 0,
+            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+        };
+
+        if (onBorder)
+        {
+            int neighborX = chunkX + (int)dVec.X;
+            int neighborY = chunkY + (int)dVec.Y;
+            int neighborZ = chunkZ + (int)dVec.Z;
+
+            World world = drawableWorld.World;
+            if (neighborX >= 0 && neighborX < world.XChunks &&
+                neighborY >= 0 && neighborY < world.YChunks &&
+                neighborZ >= 0 && neighborZ < world.ZChunks &&
+                drawableWorld.GetDrawableChunk(neighborX, neighborY, neighborZ).Lod < Lod)
+            {
+                return false;
+            }
+        }
+        
+        Vector3 dScaledVec = dVec * stepSize;
+        return drawableWorld.World.GetVoxel(voxelWorldPos + dScaledVec) != Voxels.Air;
+    }
+
+    public void GenerateMesh(DrawableWorld drawableWorld, VoxelChunk voxelChunk)
     {
         vertexCount = 0;
         indexCount = 0;
 
-        for (var z = 0; z < voxelChunk.Depth; z++)
-        for (var y = 0; y < voxelChunk.Height; y++)
-        for (var x = 0; x < voxelChunk.Width; x++)
+        var stepSize = 1;
+
+        for (var i = 0; i < Lod; i++)
+        {
+            stepSize *= 2;
+        }
+
+        for (var z = 0; z < voxelChunk.Depth; z += stepSize)
+        for (var y = 0; y < voxelChunk.Height; y += stepSize)
+        for (var x = 0; x < voxelChunk.Width; x += stepSize)
         {
             Voxels voxel = voxelChunk.GetVoxel(x, y, z);
 
@@ -78,9 +132,7 @@ public class DrawableVoxelChunk
             for (var di = 0; di < 6; di++)
             {
                 var direction = (Directions)di;
-                Vector3 dVec = direction.ToVec();
-
-                if (world.GetVoxel(voxelWorldPos + dVec) != Voxels.Air) continue;
+                if (CanCullFace(drawableWorld, voxelChunk, voxelWorldPos, x, y, z, direction, stepSize)) continue;
 
                 for (var ii = 0; ii < 6; ii++)
                 {
@@ -101,15 +153,17 @@ public class DrawableVoxelChunk
                     }
 
                     vertex.Color = new Color(vertex.Color.ToVector3() * variance);
-                    
-                    VertexNeighbors neighbors = CheckVertexNeighbors(world, voxelWorldPos, vertex.Position, direction);
-                    
+
+                    VertexNeighbors neighbors = CheckVertexNeighbors(drawableWorld.World, voxelWorldPos, vertex.Position, direction, stepSize);
+
                     int ao = CalculateAoLevel(neighbors);
                     aoBuffer[vi] = ao;
                     float aoLightValue = MathF.Min(ao / 3f + 0.1f, 1f);
                     vertex.Color = new Color(vertex.Color.ToVector3() * aoLightValue);
 
+                    vertex.Position *= stepSize;
                     vertex.Position += voxelWorldPos;
+                    
                     vertex.TextureCoordinate += CubeMesh.GetTexCoord(voxel);
 
                     vertices[vertexCount] = vertex;
@@ -120,9 +174,24 @@ public class DrawableVoxelChunk
             }
         }
 
-        VertexBuffer.SetData(vertices, 0, vertexCount);
-        IndexBuffer.SetData(indices, 0, indexCount);
+        MarkNeedsSwap();
+    }
+
+    public void SwapBuffers()
+    {
+        if (vertexCount > 0 && indexCount > 0)
+        {
+            VertexBuffer.SetData(vertices, 0, vertexCount);
+            IndexBuffer.SetData(indices, 0, indexCount);
+        }
+
         PrimitiveCount = indexCount / 3;
+        NeedsSwap = false;
+    }
+
+    public void MarkNeedsSwap()
+    {
+        NeedsSwap = true;
     }
 
     private static int CalculateAoLevel(VertexNeighbors neighbors)
@@ -131,7 +200,7 @@ public class DrawableVoxelChunk
         {
             return 0;
         }
-        
+
         var occupied = 0;
 
         if (neighbors.Side1) occupied++;
@@ -143,12 +212,13 @@ public class DrawableVoxelChunk
         return 3 - occupied;
     }
 
-    private VertexNeighbors CheckVertexNeighbors(World world, Vector3 voxelWorldPos, Vector3 vertexPos, Directions direction)
+    private VertexNeighbors CheckVertexNeighbors(World world, Vector3 voxelWorldPos, Vector3 vertexPos, Directions direction, int stepSize)
     {
         Vector3 dir = vertexPos * 2;
         dir.X -= 1;
         dir.Y -= 1;
         dir.Z -= 1;
+        dir *= stepSize;
 
         int outwardComponent = direction.OutwardComponentI();
         Vector3 dirSide1 = dir;
@@ -174,7 +244,7 @@ public class DrawableVoxelChunk
         VertexPositionColorTexture v3 = vertices[faceStart + 3];
 
         if (aoBuffer[0] + aoBuffer[2] > aoBuffer[1] + aoBuffer[3]) return;
-        
+
         vertices[faceStart] = v3;
         vertices[faceStart + 1] = v0;
         vertices[faceStart + 2] = v1;
@@ -186,5 +256,17 @@ public class DrawableVoxelChunk
         public bool Side1;
         public bool Side2;
         public bool Corner;
+    }
+
+    private static int GetLod(int cameraX, int cameraY, int cameraZ, int chunkX, int chunkY, int chunkZ, int chunkWidth, int chunkHeight, int chunkDepth)
+    {
+        const int chunksPerLod = 2;
+        int cameraChunkX = (int)Math.Floor(cameraX / (float)chunkWidth);
+        int cameraChunkY = (int)Math.Floor(cameraY / (float)chunkHeight);
+        int cameraChunkZ = (int)Math.Floor(cameraZ / (float)chunkDepth);
+        float distance = new Vector3(chunkX - cameraChunkX, chunkY - cameraChunkY, chunkZ - cameraChunkZ).Length();
+        int lod = (int)Math.Floor(distance / chunksPerLod);
+        
+        return lod;
     }
 }

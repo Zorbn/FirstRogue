@@ -1,7 +1,6 @@
-﻿using FirstRogue.Gfx;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 
-namespace FirstRogue;
+namespace FirstRogue.Gfx;
 
 public class DrawableWorld
 {
@@ -21,12 +20,12 @@ public class DrawableWorld
                 new DrawableVoxelChunk(graphicsDevice, chunkWidth, chunkHeight, chunkDepth, x, y, z);
     }
 
-    public void Update()
+    public void Update(int cameraX, int cameraY, int cameraZ)
     {
         for (var x = 0; x < World.XChunks; x++)
         for (var y = 0; y < World.YChunks; y++)
         for (var z = 0; z < World.ZChunks; z++)
-            GetDrawableChunk(x, y, z).Update(World);
+            GetDrawableChunk(x, y, z).Update(this, cameraX, cameraY, cameraZ);
     }
 
     public void Draw(GraphicsDevice graphicsDevice, BasicEffect voxelEffect)
@@ -40,6 +39,13 @@ public class DrawableWorld
             for (var z = 0; z < World.ZChunks; z++)
             {
                 DrawableVoxelChunk chunk = GetDrawableChunk(x, y, z);
+
+                if (chunk.NeedsSwap)
+                {
+                    chunk.SwapBuffers();
+                }
+                
+                if (chunk.PrimitiveCount < 1) continue;
 
                 graphicsDevice.SetVertexBuffer(chunk.VertexBuffer);
                 graphicsDevice.Indices = chunk.IndexBuffer;

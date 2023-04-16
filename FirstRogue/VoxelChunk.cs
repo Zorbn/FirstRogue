@@ -3,9 +3,6 @@ using Microsoft.Xna.Framework;
 
 namespace FirstRogue;
 
-// TODO: Add sub-chunks for faster updating.
-// Sub-chunks store their own meshes, on each update, only one sub-chunk mesh is regenerated.
-// Then, the chunk mesh is created by appending the sub-chunk meshes to each other.
 public class VoxelChunk
 {
     public readonly int Depth;
@@ -32,8 +29,7 @@ public class VoxelChunk
         {
             int voxelI = random.Next(0, 4);
 
-            if (y > Height * 0.75f) continue;
-            if (y > Height / 2) voxelI = 2;
+            if (y == Height - 1) voxelI = 2;
             
             SetVoxel(x, y, z, (Voxels)voxelI);
         }
@@ -50,9 +46,9 @@ public class VoxelChunk
 
     public void SetVoxel(Vector3 pos, Voxels voxel)
     {
-        var x = (int)pos.X;
-        var y = (int)pos.Y;
-        var z = (int)pos.Z;
+        var x = (int)MathF.Floor(pos.X);
+        var y = (int)MathF.Floor(pos.Y);
+        var z = (int)MathF.Floor(pos.Z);
 
         SetVoxel(x, y, z, voxel);
     }
@@ -64,12 +60,12 @@ public class VoxelChunk
         int vi = x + y * Width + z * Width * Height;
         return voxels[vi];
     }
-    
+
     public Voxels GetVoxel(Vector3 pos)
     {
-        var x = (int)pos.X;
-        var y = (int)pos.Y;
-        var z = (int)pos.Z;
+        var x = (int)MathF.Floor(pos.X);
+        var y = (int)MathF.Floor(pos.Y);
+        var z = (int)MathF.Floor(pos.Z);
 
         return GetVoxel(x, y, z);
     }

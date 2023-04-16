@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using FirstRogue.Gfx;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -22,7 +21,6 @@ public class Game1 : Game
     private Random random;
     private DrawableWorld drawableWorld;
     private Player player;
-    private CameraPosition cameraPosition = new();
     private Matrix projection;
 
     private AlphaTestEffect spriteEffect;
@@ -31,8 +29,6 @@ public class Game1 : Game
     private BasicEffect voxelEffect;
 
     private Matrix worldMatrix;
-
-    private Thread worldThread;
 
     public Game1()
     {
@@ -46,38 +42,10 @@ public class Game1 : Game
         // graphics.PreferredBackBufferWidth = 1920;
         // graphics.PreferredBackBufferHeight = 1080;
         // graphics.IsFullScreen = true;
-        
-        graphics.SynchronizeWithVerticalRetrace = false;
-        IsFixedTimeStep = false;
-
-        worldThread = new Thread(WorldThreadProc);
+        // graphics.SynchronizeWithVerticalRetrace = false;
+        // IsFixedTimeStep = false;
 
         input = new Input();
-    }
-
-    private void WorldThreadProc()
-    {
-        while (true)
-        {
-            if (input.IsFocused)
-            {
-                if (Monitor.TryEnter(player))
-                {
-                    try
-                    {
-                        cameraPosition.X = (int)Math.Floor(player.Pos.X);
-                        cameraPosition.Y = (int)Math.Floor(player.Pos.Y);
-                        cameraPosition.Z = (int)Math.Floor(player.Pos.Z);
-                    }
-                    finally
-                    {
-                        Monitor.Exit(player);
-                    }
-                }
-                
-                drawableWorld.Update(cameraPosition.X, cameraPosition.Y, cameraPosition.Z);
-            }
-        }
     }
 
     private void OnResize(object sender, EventArgs eventArgs)
@@ -102,7 +70,7 @@ public class Game1 : Game
         sprites.Add(new Sprite(GraphicsDevice, new Vector3(-4, 0, -4), 0, 0, 1, 1, 1));
         sprites.Add(new Sprite(GraphicsDevice, new Vector3(-5, 0, -5), 0, 1, 2, 2, 2));
 
-        drawableWorld = new DrawableWorld(GraphicsDevice, 2, 8, 2, 32, 32, 32);
+        drawableWorld = new DrawableWorld(GraphicsDevice, 2, 2, 2, 16, 16, 16);
         drawableWorld.World.GenerateWorld(random);
 
         input.UpdateWindowCenter(this);
@@ -125,8 +93,6 @@ public class Game1 : Game
 
         GraphicsDevice.RasterizerState = rasterizerState;
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
-        
-        worldThread.Start();
 
         base.Initialize();
     }
@@ -145,8 +111,8 @@ public class Game1 : Game
         if (input.IsFocused)
         {
             player.Update(deltaTime, input, drawableWorld.World);
-            
-            // drawableWorld.Update(cameraPosition.X, cameraPosition.Y, cameraPosition.Z);
+
+            drawableWorld.Update();
         }
 
         base.Update(gameTime);

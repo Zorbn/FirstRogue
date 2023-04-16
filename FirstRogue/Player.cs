@@ -9,7 +9,7 @@ public class Player
     private const float MouseSens = 0.002f;
     private readonly float minLookRad = MathHelper.ToRadians(-89f), maxLookRad = MathHelper.ToRadians(89f);
 
-    private readonly float speed = 40f;
+    private readonly float speed = 4f;
 
     private float lookY = MathF.PI, lookX;
     public Vector3 Pos { get; private set; } = new(-4f, 0.5f, -3f);
@@ -44,12 +44,6 @@ public class Player
         {
             Hit hit = Raycast.Cast(world, Pos, GetLookVector(), 10f);
             world.SetVoxel(hit.Pos, Voxels.Air);
-        }
-        
-        if (input.WasMouseButtonPressed(MouseButtons.Right))
-        {
-            Hit hit = Raycast.Cast(world, Pos, GetLookVector(), 10f);
-            world.SetVoxel(hit.LastPos, Voxels.Marble);
         }
     }
 

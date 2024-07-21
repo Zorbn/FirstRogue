@@ -7,30 +7,24 @@ public class World
 {
     public readonly VoxelChunk[] Chunks;
     
-    public readonly int ChunkDepth;
-    public readonly int ChunkHeight;
-    public readonly int ChunkWidth;
-    
-    public readonly int Depth;
-    public readonly int Height;
-    public readonly int Width;
-    
-    public readonly int XChunks;
-    public readonly int YChunks;
-    public readonly int ZChunks;
+    public const int ChunkDepth = 32;
+    public const int ChunkHeight = 32;
+    public const int ChunkWidth = 32;
 
-    public World(int xChunks, int yChunks, int zChunks, int chunkWidth, int chunkHeight, int chunkDepth)
+    public const int ChunkDepthShift = 5;
+    public const int ChunkHeightShift = 5;
+    public const int ChunkWidthShift = 5;
+    
+    public const int XChunks = 2;
+    public const int YChunks = 2;
+    public const int ZChunks = 2;
+
+    public const int Depth = ChunkDepth * ZChunks;
+    public const int Height = ChunkHeight * YChunks;
+    public const int Width = ChunkWidth * XChunks;
+
+    public World()
     {
-        XChunks = xChunks;
-        YChunks = yChunks;
-        ZChunks = zChunks;
-        ChunkWidth = chunkWidth;
-        ChunkHeight = chunkHeight;
-        ChunkDepth = chunkDepth;
-        Width = XChunks * ChunkWidth;
-        Height = YChunks * ChunkHeight;
-        Depth = ZChunks * ChunkDepth;
-
         Chunks = new VoxelChunk[XChunks * YChunks * ZChunks];
 
         for (var x = 0; x < XChunks; x++)
@@ -50,6 +44,13 @@ public class World
             GetChunk(x, y, z).GenerateTerrain(random);
     }
 
+    public VoxelChunk GetChunkUnchecked(int x, int y, int z)
+    {
+        int i = x + y * XChunks + z * XChunks * YChunks;
+
+        return Chunks[i];
+    }
+
     public VoxelChunk GetChunk(int x, int y, int z)
     {
         int i = x + y * XChunks + z * XChunks * YChunks;
@@ -63,15 +64,15 @@ public class World
     {
         if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth) return;
 
-        int chunkX = x / ChunkWidth;
-        int chunkY = y / ChunkHeight;
-        int chunkZ = z / ChunkDepth;
-        int subChunkX = x % ChunkWidth;
-        int subChunkY = y % ChunkHeight;
-        int subChunkZ = z % ChunkDepth;
+        int chunkX = x >> ChunkWidthShift;
+        int chunkY = y >> ChunkHeightShift;
+        int chunkZ = z >> ChunkDepthShift;
+        int subChunkX = x & (ChunkWidth - 1);
+        int subChunkY = y & (ChunkHeight - 1);
+        int subChunkZ = z & (ChunkDepth - 1);
 
-        VoxelChunk chunk = GetChunk(chunkX, chunkY, chunkZ);
-        chunk.SetVoxel(subChunkX, subChunkY, subChunkZ, voxel);
+        VoxelChunk chunk = GetChunkUnchecked(chunkX, chunkY, chunkZ);
+        chunk.SetVoxelUnchecked(subChunkX, subChunkY, subChunkZ, voxel);
 
         UpdateChunkBoundaries(chunkX, chunkY, chunkZ, subChunkX, subChunkY, subChunkZ);
     }
@@ -107,15 +108,15 @@ public class World
     {
         if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth) return Voxels.Air;
 
-        int chunkX = x / ChunkWidth;
-        int chunkY = y / ChunkHeight;
-        int chunkZ = z / ChunkDepth;
-        int subChunkX = x % ChunkWidth;
-        int subChunkY = y % ChunkHeight;
-        int subChunkZ = z % ChunkDepth;
+        int chunkX = x >> ChunkWidthShift;
+        int chunkY = y >> ChunkHeightShift;
+        int chunkZ = z >> ChunkDepthShift;
+        int subChunkX = x & (ChunkWidth - 1);
+        int subChunkY = y & (ChunkHeight - 1);
+        int subChunkZ = z & (ChunkDepth - 1);
 
-        VoxelChunk chunk = GetChunk(chunkX, chunkY, chunkZ);
-        return chunk.GetVoxel(subChunkX, subChunkY, subChunkZ);
+        VoxelChunk chunk = GetChunkUnchecked(chunkX, chunkY, chunkZ);
+        return chunk.GetVoxelUnchecked(subChunkX, subChunkY, subChunkZ);
     }
 
     public Voxels GetVoxel(Vector3 pos)
@@ -125,5 +126,10 @@ public class World
         var z = (int)MathF.Floor(pos.Z);
 
         return GetVoxel(x, y, z);
+    }
+
+    public Voxels GetVoxel(IVector3 pos)
+    {
+        return GetVoxel(pos.X, pos.Y, pos.Z);
     }
 }

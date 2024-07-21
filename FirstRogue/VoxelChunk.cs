@@ -9,7 +9,7 @@ public class VoxelChunk
     public readonly int Height;
     public readonly int Width;
 
-    private readonly Voxels[] voxels;
+    public readonly Voxels[] voxels;
 
     public VoxelChunk(int width, int height, int depth)
     {
@@ -35,6 +35,13 @@ public class VoxelChunk
         }
     }
 
+    public void SetVoxelUnchecked(int x, int y, int z, Voxels voxel)
+    {
+        int vi = x + y * Width + z * Width * Height;
+        voxels[vi] = voxel;
+        Changed = true;
+    }
+
     public void SetVoxel(int x, int y, int z, Voxels voxel)
     {
         if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth) return;
@@ -51,6 +58,12 @@ public class VoxelChunk
         var z = (int)MathF.Floor(pos.Z);
 
         SetVoxel(x, y, z, voxel);
+    }
+
+    public Voxels GetVoxelUnchecked(int x, int y, int z)
+    {
+        int vi = x + y * Width + z * Width * Height;
+        return voxels[vi];
     }
 
     public Voxels GetVoxel(int x, int y, int z)

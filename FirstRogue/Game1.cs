@@ -38,6 +38,9 @@ public class Game1 : Game
         Window.AllowUserResizing = true;
         Window.ClientSizeChanged += OnResize;
 
+        graphics.SynchronizeWithVerticalRetrace = false;
+        IsFixedTimeStep = false;
+
         // Fullscreen:
         // graphics.PreferredBackBufferWidth = 1920;
         // graphics.PreferredBackBufferHeight = 1080;
@@ -70,7 +73,7 @@ public class Game1 : Game
         sprites.Add(new Sprite(GraphicsDevice, new Vector3(-4, 0, -4), 0, 0, 1, 1, 1));
         sprites.Add(new Sprite(GraphicsDevice, new Vector3(-5, 0, -5), 0, 1, 2, 2, 2));
 
-        drawableWorld = new DrawableWorld(GraphicsDevice, 2, 2, 2, 16, 16, 16);
+        drawableWorld = new DrawableWorld();
         drawableWorld.World.GenerateWorld(random);
 
         input.UpdateWindowCenter(this);
@@ -112,7 +115,7 @@ public class Game1 : Game
         {
             player.Update(deltaTime, input, drawableWorld.World);
 
-            drawableWorld.Update();
+            drawableWorld.Update(GraphicsDevice);
         }
 
         base.Update(gameTime);

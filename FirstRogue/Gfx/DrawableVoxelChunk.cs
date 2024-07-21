@@ -7,19 +7,17 @@ namespace FirstRogue.Gfx;
 
 public class DrawableVoxelChunk
 {
-    public readonly IndexBuffer IndexBuffer;
-    private readonly uint[] indices;
-    public readonly VertexBuffer VertexBuffer;
-    private readonly VertexPositionColorTexture[] vertices;
+    public IndexBuffer IndexBuffer;
+    private readonly ArrayList<uint> indices;
+    public VertexBuffer VertexBuffer;
+    private readonly ArrayList<VertexPositionColorTexture> vertices;
     private readonly float[] aoBuffer = new float[4];
     private readonly int chunkX, chunkY, chunkZ;
-    private int indexCount;
-    private int vertexCount;
 
     private const float NoiseMin = 0.8f;
     private readonly float[] noise;
 
-    public DrawableVoxelChunk(GraphicsDevice graphicsDevice, int width, int height, int depth, int chunkX, int chunkY, int chunkZ)
+    public DrawableVoxelChunk(int width, int height, int depth, int chunkX, int chunkY, int chunkZ)
     {
         this.chunkX = chunkX;
         this.chunkY = chunkY;
@@ -27,23 +25,13 @@ public class DrawableVoxelChunk
         
         noise = new float[(width + 2) * (height + 2) * (depth + 2)];
 
-        // Assuming that maximum faces in a chunk, without redundant faces, is Ceil(voxelCount/2) * 6.
-        // Also account for 4 vertices per face and 6 indices per face.
-        int maxFaces = (int)MathF.Ceiling(width * height * depth * 0.5f) * 6;
-        int maxVertices = maxFaces * 4;
-        int maxIndices = maxFaces * 6;
-
-        vertices = new VertexPositionColorTexture[maxVertices];
-        VertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColorTexture), maxVertices,
-            BufferUsage.WriteOnly);
-
-        indices = new uint[maxIndices];
-        IndexBuffer = new IndexBuffer(graphicsDevice, typeof(uint), maxIndices, BufferUsage.WriteOnly);
+        vertices = new ArrayList<VertexPositionColorTexture>();
+        indices = new ArrayList<uint>();
     }
 
     public int PrimitiveCount { get; private set; }
 
-    public void Update(World world)
+    public void Update(World world, GraphicsDevice graphicsDevice)
     {
         VoxelChunk voxelChunk = world.GetChunk(chunkX, chunkY, chunkZ);
         
@@ -51,78 +39,121 @@ public class DrawableVoxelChunk
         {
             var sw = new Stopwatch();
             sw.Start();
-            GenerateMesh(world, voxelChunk);
+            GenerateMesh(world, voxelChunk, graphicsDevice);
             Console.WriteLine(sw.Elapsed.TotalMilliseconds);
             voxelChunk.UnmarkChanged();
         }
     }
 
-    public void GenerateMesh(World world, VoxelChunk voxelChunk)
+    public void GenerateMesh(World world, VoxelChunk voxelChunk, GraphicsDevice graphicsDevice)
     {
-        vertexCount = 0;
-        indexCount = 0;
+        vertices.Clear();
+        indices.Clear();
 
         for (var z = 0; z < voxelChunk.Depth; z++)
         for (var y = 0; y < voxelChunk.Height; y++)
         for (var x = 0; x < voxelChunk.Width; x++)
         {
-            Voxels voxel = voxelChunk.GetVoxel(x, y, z);
+            Voxels voxel = voxelChunk.voxels[x + y * voxelChunk.Width + z * voxelChunk.Width * voxelChunk.Height];
 
             if (voxel == Voxels.Air) continue;
 
             int worldX = x + chunkX * voxelChunk.Width;
             int worldY = y + chunkY * voxelChunk.Height;
             int worldZ = z + chunkZ * voxelChunk.Depth;
-            var voxelWorldPos = new Vector3(worldX, worldY, worldZ);
+            IVector3 voxelWorldPos = new IVector3(worldX, worldY, worldZ);
 
-            for (var di = 0; di < 6; di++)
-            {
-                var direction = (Directions)di;
-                Vector3 dVec = direction.ToVec();
+            // for (var di = 0; di < 6; di++)
+            // {
+            //     var direction = (Directions)di;
+            //
+            //     if (world.GetVoxel(voxelWorldPos + direction.ToVec()) != Voxels.Air) continue;
+            //
+            //     AddFace(voxelWorldPos, voxel, direction);
+            // }
 
-                if (world.GetVoxel(voxelWorldPos + dVec) != Voxels.Air) continue;
+            uint opaqueBitmask = world.GetVoxel(voxelWorldPos.X, voxelWorldPos.Y, voxelWorldPos.Z - 1) != Voxels.Air ? 1u : 0u;
+            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X, voxelWorldPos.Y, voxelWorldPos.Z + 1) != Voxels.Air ? 1u : 0u) << 1;
+            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X + 1, voxelWorldPos.Y, voxelWorldPos.Z) != Voxels.Air ? 1u : 0u) << 2;
+            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X - 1, voxelWorldPos.Y, voxelWorldPos.Z) != Voxels.Air ? 1u : 0u) << 3;
+            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X, voxelWorldPos.Y + 1, voxelWorldPos.Z) != Voxels.Air ? 1u : 0u) << 4;
+            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X, voxelWorldPos.Y - 1, voxelWorldPos.Z) != Voxels.Air ? 1u : 0u) << 5;
 
-                for (var ii = 0; ii < 6; ii++)
-                {
-                    indices[indexCount] = (uint)(CubeMesh.Indices[direction][ii] + vertexCount);
-                    indexCount++;
-                }
+            if (opaqueBitmask == 0) continue;
 
-                for (var vi = 0; vi < 4; vi++)
-                {
-                    VertexPositionColorTexture vertex = CubeMesh.Vertices[direction][vi];
-
-                    int noiseI = (x + 1) + (y + 1) * voxelChunk.Width + (z + 1) * voxelChunk.Width * voxelChunk.Height;
-                    float variance = noise[noiseI];
-                    if (variance == 0f)
-                    {
-                        variance = GameRandom.GradientNoise(worldX, worldY, worldZ) * 0.2f + NoiseMin;
-                        noise[noiseI] = variance;
-                    }
-
-                    vertex.Color = new Color(vertex.Color.ToVector3() * variance);
-                    
-                    VertexNeighbors neighbors = CheckVertexNeighbors(world, voxelWorldPos, vertex.Position, direction);
-                    
-                    int ao = CalculateAoLevel(neighbors);
-                    aoBuffer[vi] = ao;
-                    float aoLightValue = MathF.Min(ao / 3f + 0.1f, 1f);
-                    vertex.Color = new Color(vertex.Color.ToVector3() * aoLightValue);
-
-                    vertex.Position += voxelWorldPos;
-                    vertex.TextureCoordinate += CubeMesh.GetTexCoord(voxel);
-
-                    vertices[vertexCount] = vertex;
-                    vertexCount++;
-                }
-
-                OrientLastFace();
-            }
+            if ((opaqueBitmask & 0b000001) == 0) AddFace(voxelWorldPos, voxel, Directions.Forward);
+            if ((opaqueBitmask & 0b000010) == 0) AddFace(voxelWorldPos, voxel, Directions.Backward);
+            if ((opaqueBitmask & 0b000100) == 0) AddFace(voxelWorldPos, voxel, Directions.Right);
+            if ((opaqueBitmask & 0b001000) == 0) AddFace(voxelWorldPos, voxel, Directions.Left);
+            if ((opaqueBitmask & 0b010000) == 0) AddFace(voxelWorldPos, voxel, Directions.Up);
+            if ((opaqueBitmask & 0b100000) == 0) AddFace(voxelWorldPos, voxel, Directions.Down);
         }
 
-        VertexBuffer.SetData(vertices, 0, vertexCount);
-        IndexBuffer.SetData(indices, 0, indexCount);
-        PrimitiveCount = indexCount / 3;
+        if (VertexBuffer is null || VertexBuffer.VertexCount < vertices.Count)
+        {
+            VertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColorTexture), vertices.Array.Length,
+                BufferUsage.WriteOnly);
+        }
+
+        if (IndexBuffer is null || IndexBuffer.IndexCount < indices.Count)
+        {
+            IndexBuffer = new IndexBuffer(graphicsDevice, typeof(uint), indices.Array.Length, BufferUsage.WriteOnly);
+        }
+
+        VertexBuffer.SetData(vertices.Array, 0, vertices.Count);
+        IndexBuffer.SetData(indices.Array, 0, indices.Count);
+        PrimitiveCount = indices.Count / 3;
+    }
+
+    private void AddFace(IVector3 voxelWorldPos, Voxels voxel, Directions direction)
+    {
+        var directionI = (int)direction;
+
+        indices.Reserve(6);
+
+        for (var ii = 0; ii < 6; ii++)
+        {
+            indices.AddUnchecked((uint)(CubeMesh.Indices[directionI][ii] + vertices.Count));
+        }
+
+        vertices.Reserve(4);
+
+        for (var vi = 0; vi < 4; vi++)
+        {
+            VertexPositionColorTexture vertex = CubeMesh.Vertices[directionI][vi];
+
+            // int noiseI = (x + 1) + (y + 1) * voxelChunk.Width + (z + 1) * voxelChunk.Width * voxelChunk.Height;
+            // float variance = noise[noiseI];
+            // if (variance == 0f)
+            // {
+            //     variance = GameRandom.GradientNoise(worldX, worldY, worldZ) * 0.2f + NoiseMin;
+            //     noise[noiseI] = variance;
+            // }
+            //
+            // vertex.Color = new Color(vertex.Color.ToVector3() * variance);
+            //
+            // VertexNeighbors neighbors = CheckVertexNeighbors(world, voxelWorldPos, vertex.Position, direction);
+            //
+            // int ao = CalculateAoLevel(neighbors);
+            // aoBuffer[vi] = ao;
+            // float aoLightValue = MathF.Min(ao / 3f + 0.1f, 1f);
+            // vertex.Color = new Color(vertex.Color.ToVector3() * aoLightValue);
+
+            vertex.Position.X += voxelWorldPos.X;
+            vertex.Position.Y += voxelWorldPos.Y;
+            vertex.Position.Z += voxelWorldPos.Z;
+
+            int voxelI = (int)voxel * 4;
+            float u = CubeMesh.UnitX * (voxelI & (CubeMesh.TileSize - 1));
+            float v = CubeMesh.UnitY * (voxelI >> CubeMesh.TileSizeShift * 2);
+
+            vertex.TextureCoordinate.X += u;
+            vertex.TextureCoordinate.Y += v;
+
+            vertices.AddUnchecked(vertex);
+        }
+
+        // OrientLastFace();
     }
 
     private static int CalculateAoLevel(VertexNeighbors neighbors)
@@ -167,7 +198,7 @@ public class DrawableVoxelChunk
     // Ensure that color interpolation will be correct for the most recent face.
     private void OrientLastFace()
     {
-        int faceStart = vertexCount - 4;
+        int faceStart = vertices.Count - 4;
         VertexPositionColorTexture v0 = vertices[faceStart];
         VertexPositionColorTexture v1 = vertices[faceStart + 1];
         VertexPositionColorTexture v2 = vertices[faceStart + 2];

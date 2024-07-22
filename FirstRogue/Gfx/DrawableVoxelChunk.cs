@@ -188,7 +188,7 @@ public class DrawableVoxelChunk
                     worldZ + vertexAoDirections.Z) != Voxels.Air;
                 break;
             default:
-                side1 = world.GetVoxel(worldX, worldY + vertexAoDirections.Y, worldZ + vertexAoDirections.X) !=
+                side1 = world.GetVoxel(worldX, worldY + vertexAoDirections.Y, worldZ + vertexAoDirections.Z) !=
                         Voxels.Air;
                 side2 = world.GetVoxel(worldX + vertexAoDirections.X, worldY + vertexAoDirections.Y, worldZ) !=
                         Voxels.Air;

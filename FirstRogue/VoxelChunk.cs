@@ -28,11 +28,12 @@ public class VoxelChunk
         for (var y = 0; y < Height; y++)
         for (var x = 0; x < Width; x++)
         {
-            int voxelI = random.Next(0, 4);
-
-            if (y == Height - 1) voxelI = 2;
-            
-            SetVoxel(x, y, z, (Voxels)voxelI);
+            // int voxelI = random.Next(0, 4);
+            //
+            // if (y == Height - 1) voxelI = 2;
+            //
+            // SetVoxel(x, y, z, (Voxels)voxelI);
+            SetVoxel(x, y, z, Voxels.Dirt);
         }
     }
 

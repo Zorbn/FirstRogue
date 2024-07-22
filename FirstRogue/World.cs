@@ -7,9 +7,9 @@ public class World
 {
     public readonly VoxelChunk[] Chunks;
     
-    public const int XChunks = 2;
+    public const int XChunks = 20;
     public const int YChunks = 2;
-    public const int ZChunks = 2;
+    public const int ZChunks = 20;
 
     public const int Depth = VoxelChunk.Depth * ZChunks;
     public const int Height = VoxelChunk.Height * YChunks;

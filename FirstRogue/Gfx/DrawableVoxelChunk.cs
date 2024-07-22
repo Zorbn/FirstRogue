@@ -17,13 +17,30 @@ public class DrawableVoxelChunk
     private const float NoiseMin = 0.8f;
     private readonly float[] noise;
 
-    public DrawableVoxelChunk(int width, int height, int depth, int chunkX, int chunkY, int chunkZ)
+    public DrawableVoxelChunk(int chunkX, int chunkY, int chunkZ)
     {
         this.chunkX = chunkX;
         this.chunkY = chunkY;
         this.chunkZ = chunkZ;
         
-        noise = new float[(width + 2) * (height + 2) * (depth + 2)];
+        noise = new float[VoxelChunk.Width * VoxelChunk.Height * VoxelChunk.Depth];
+
+        int chunkWorldX = chunkX * VoxelChunk.Width;
+        int chunkWorldY = chunkY * VoxelChunk.Height;
+        int chunkWorldZ = chunkZ * VoxelChunk.Depth;
+
+        for (int z = 0; z < VoxelChunk.Depth; z++)
+        for (int y = 0; y < VoxelChunk.Height; y++)
+        for (int x = 0; x < VoxelChunk.Width; x++)
+        {
+            int worldX = x + chunkWorldX;
+            int worldY = y + chunkWorldY;
+            int worldZ = z + chunkWorldZ;
+
+            int noiseI = x + y * VoxelChunk.Width + z * VoxelChunk.Width * VoxelChunk.Height;
+
+            noise[noiseI] = GameRandom.GradientNoise(worldX, worldY, worldZ) * 0.2f + NoiseMin;
+        }
 
         vertices = new ArrayList<VertexPositionColorTexture>();
         indices = new ArrayList<uint>();
@@ -50,18 +67,17 @@ public class DrawableVoxelChunk
         vertices.Clear();
         indices.Clear();
 
-        for (var z = 0; z < voxelChunk.Depth; z++)
-        for (var y = 0; y < voxelChunk.Height; y++)
-        for (var x = 0; x < voxelChunk.Width; x++)
+        for (int z = 0; z < VoxelChunk.Depth; z++)
+        for (int y = 0; y < VoxelChunk.Height; y++)
+        for (int x = 0; x < VoxelChunk.Width; x++)
         {
-            Voxels voxel = voxelChunk.voxels[x + y * voxelChunk.Width + z * voxelChunk.Width * voxelChunk.Height];
+            Voxels voxel = voxelChunk.voxels[x + y * VoxelChunk.Width + z * VoxelChunk.Width * VoxelChunk.Height];
 
             if (voxel == Voxels.Air) continue;
 
-            int worldX = x + chunkX * voxelChunk.Width;
-            int worldY = y + chunkY * voxelChunk.Height;
-            int worldZ = z + chunkZ * voxelChunk.Depth;
-            IVector3 voxelWorldPos = new IVector3(worldX, worldY, worldZ);
+            int worldX = x + chunkX * VoxelChunk.Width;
+            int worldY = y + chunkY * VoxelChunk.Height;
+            int worldZ = z + chunkZ * VoxelChunk.Depth;
 
             // for (var di = 0; di < 6; di++)
             // {
@@ -72,21 +88,21 @@ public class DrawableVoxelChunk
             //     AddFace(voxelWorldPos, voxel, direction);
             // }
 
-            uint opaqueBitmask = world.GetVoxel(voxelWorldPos.X, voxelWorldPos.Y, voxelWorldPos.Z - 1) != Voxels.Air ? 1u : 0u;
-            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X, voxelWorldPos.Y, voxelWorldPos.Z + 1) != Voxels.Air ? 1u : 0u) << 1;
-            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X + 1, voxelWorldPos.Y, voxelWorldPos.Z) != Voxels.Air ? 1u : 0u) << 2;
-            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X - 1, voxelWorldPos.Y, voxelWorldPos.Z) != Voxels.Air ? 1u : 0u) << 3;
-            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X, voxelWorldPos.Y + 1, voxelWorldPos.Z) != Voxels.Air ? 1u : 0u) << 4;
-            opaqueBitmask |= (world.GetVoxel(voxelWorldPos.X, voxelWorldPos.Y - 1, voxelWorldPos.Z) != Voxels.Air ? 1u : 0u) << 5;
+            uint opaqueBitmask = world.GetVoxel(worldX, worldY, worldZ - 1) != Voxels.Air ? 1u : 0u;
+            opaqueBitmask |= (world.GetVoxel(worldX, worldY, worldZ + 1) != Voxels.Air ? 1u : 0u) << 1;
+            opaqueBitmask |= (world.GetVoxel(worldX + 1, worldY, worldZ) != Voxels.Air ? 1u : 0u) << 2;
+            opaqueBitmask |= (world.GetVoxel(worldX - 1, worldY, worldZ) != Voxels.Air ? 1u : 0u) << 3;
+            opaqueBitmask |= (world.GetVoxel(worldX, worldY + 1, worldZ) != Voxels.Air ? 1u : 0u) << 4;
+            opaqueBitmask |= (world.GetVoxel(worldX, worldY - 1, worldZ) != Voxels.Air ? 1u : 0u) << 5;
 
             if (opaqueBitmask == 0) continue;
 
-            if ((opaqueBitmask & 0b000001) == 0) AddFace(voxelWorldPos, voxel, Directions.Forward);
-            if ((opaqueBitmask & 0b000010) == 0) AddFace(voxelWorldPos, voxel, Directions.Backward);
-            if ((opaqueBitmask & 0b000100) == 0) AddFace(voxelWorldPos, voxel, Directions.Right);
-            if ((opaqueBitmask & 0b001000) == 0) AddFace(voxelWorldPos, voxel, Directions.Left);
-            if ((opaqueBitmask & 0b010000) == 0) AddFace(voxelWorldPos, voxel, Directions.Up);
-            if ((opaqueBitmask & 0b100000) == 0) AddFace(voxelWorldPos, voxel, Directions.Down);
+            if ((opaqueBitmask & 0b000001) == 0) AddFace(world, x, y, z, worldX, worldY, worldZ, voxel, Directions.Forward);
+            if ((opaqueBitmask & 0b000010) == 0) AddFace(world, x, y, z, worldX, worldY, worldZ, voxel, Directions.Backward);
+            if ((opaqueBitmask & 0b000100) == 0) AddFace(world, x, y, z, worldX, worldY, worldZ, voxel, Directions.Right);
+            if ((opaqueBitmask & 0b001000) == 0) AddFace(world, x, y, z, worldX, worldY, worldZ, voxel, Directions.Left);
+            if ((opaqueBitmask & 0b010000) == 0) AddFace(world, x, y, z, worldX, worldY, worldZ, voxel, Directions.Up);
+            if ((opaqueBitmask & 0b100000) == 0) AddFace(world, x, y, z, worldX, worldY, worldZ, voxel, Directions.Down);
         }
 
         if (VertexBuffer is null || VertexBuffer.VertexCount < vertices.Count)
@@ -105,7 +121,7 @@ public class DrawableVoxelChunk
         PrimitiveCount = indices.Count / 3;
     }
 
-    private void AddFace(IVector3 voxelWorldPos, Voxels voxel, Directions direction)
+    private void AddFace(World world, int x, int y, int z, int worldX, int worldY, int worldZ, Voxels voxel, Directions direction)
     {
         var directionI = (int)direction;
 
@@ -122,100 +138,95 @@ public class DrawableVoxelChunk
         {
             VertexPositionColorTexture vertex = CubeMesh.Vertices[directionI][vi];
 
-            // int noiseI = (x + 1) + (y + 1) * voxelChunk.Width + (z + 1) * voxelChunk.Width * voxelChunk.Height;
-            // float variance = noise[noiseI];
-            // if (variance == 0f)
-            // {
-            //     variance = GameRandom.GradientNoise(worldX, worldY, worldZ) * 0.2f + NoiseMin;
-            //     noise[noiseI] = variance;
-            // }
-            //
-            // vertex.Color = new Color(vertex.Color.ToVector3() * variance);
-            //
-            // VertexNeighbors neighbors = CheckVertexNeighbors(world, voxelWorldPos, vertex.Position, direction);
-            //
-            // int ao = CalculateAoLevel(neighbors);
-            // aoBuffer[vi] = ao;
-            // float aoLightValue = MathF.Min(ao / 3f + 0.1f, 1f);
-            // vertex.Color = new Color(vertex.Color.ToVector3() * aoLightValue);
+            int noiseI = x + y * VoxelChunk.Width + z * VoxelChunk.Width * VoxelChunk.Height;
+            float variance = noise[noiseI];
+            int ao = CheckVertexNeighbors(world, worldX, worldY, worldZ, CubeMesh.VertexAoDirections[directionI][vi], direction);
 
-            vertex.Position.X += voxelWorldPos.X;
-            vertex.Position.Y += voxelWorldPos.Y;
-            vertex.Position.Z += voxelWorldPos.Z;
+            aoBuffer[vi] = ao;
+            float aoLightValue = ao * 0.33f;
+            float colorLightness = variance * aoLightValue;
+            vertex.Color = new Color((byte)(colorLightness * vertex.Color.R), (byte)(colorLightness * vertex.Color.G), (byte)(colorLightness * vertex.Color.B));
+
+            vertex.Position = new Vector3(vertex.Position.X + worldX, vertex.Position.Y + worldY, vertex.Position.Z + worldZ);
 
             int voxelI = (int)voxel * 4;
             float u = CubeMesh.UnitX * (voxelI & (CubeMesh.TileSize - 1));
             float v = CubeMesh.UnitY * (voxelI >> CubeMesh.TileSizeShift * 2);
 
-            vertex.TextureCoordinate.X += u;
-            vertex.TextureCoordinate.Y += v;
+            vertex.TextureCoordinate = new Vector2(vertex.TextureCoordinate.X + u, vertex.TextureCoordinate.Y + v);
 
             vertices.AddUnchecked(vertex);
         }
 
-        // OrientLastFace();
+        OrientLastFace();
     }
 
-    private static int CalculateAoLevel(VertexNeighbors neighbors)
+    private int CheckVertexNeighbors(World world, int worldX, int worldY, int worldZ, IVector3 vertexAoDirections, Directions direction)
     {
-        if (neighbors.Side1 && neighbors.Side2)
+        bool side1;
+        bool side2;
+        bool corner;
+
+        switch (direction)
+        {
+            case Directions.Forward:
+            case Directions.Backward:
+                side1 = world.GetVoxel(worldX + vertexAoDirections.X, worldY, worldZ + vertexAoDirections.Z) !=
+                        Voxels.Air;
+                side2 = world.GetVoxel(worldX, worldY + vertexAoDirections.Y, worldZ + vertexAoDirections.Z) !=
+                        Voxels.Air;
+                corner = world.GetVoxel(worldX + vertexAoDirections.X, worldY + vertexAoDirections.Y,
+                    worldZ + vertexAoDirections.Z) != Voxels.Air;
+                break;
+            case Directions.Right:
+            case Directions.Left:
+                side1 = world.GetVoxel(worldX + vertexAoDirections.X, worldY + vertexAoDirections.Y, worldZ) !=
+                        Voxels.Air;
+                side2 = world.GetVoxel(worldX + vertexAoDirections.X, worldY, worldZ + vertexAoDirections.Z) !=
+                        Voxels.Air;
+                corner = world.GetVoxel(worldX + vertexAoDirections.X, worldY + vertexAoDirections.Y,
+                    worldZ + vertexAoDirections.Z) != Voxels.Air;
+                break;
+            default:
+                side1 = world.GetVoxel(worldX, worldY + vertexAoDirections.Y, worldZ + vertexAoDirections.X) !=
+                        Voxels.Air;
+                side2 = world.GetVoxel(worldX + vertexAoDirections.X, worldY + vertexAoDirections.Y, worldZ) !=
+                        Voxels.Air;
+                corner = world.GetVoxel(worldX + vertexAoDirections.X, worldY + vertexAoDirections.Y,
+                    worldZ + vertexAoDirections.Z) != Voxels.Air;
+                break;
+        }
+
+        if (side1 && side2)
         {
             return 0;
         }
-        
+
         var occupied = 0;
 
-        if (neighbors.Side1) occupied++;
+        if (side1) ++occupied;
 
-        if (neighbors.Side2) occupied++;
+        if (side2) ++occupied;
 
-        if (neighbors.Corner) occupied++;
+        if (corner) ++occupied;
 
         return 3 - occupied;
-    }
-
-    private VertexNeighbors CheckVertexNeighbors(World world, Vector3 voxelWorldPos, Vector3 vertexPos, Directions direction)
-    {
-        Vector3 dir = vertexPos * 2;
-        dir.X -= 1;
-        dir.Y -= 1;
-        dir.Z -= 1;
-
-        int outwardComponent = direction.OutwardComponentI();
-        Vector3 dirSide1 = dir;
-        dirSide1.SetComponent((outwardComponent + 2) % 3, 0f);
-        Vector3 dirSide2 = dir;
-        dirSide2.SetComponent((outwardComponent + 1) % 3, 0f);
-
-        return new VertexNeighbors
-        {
-            Side1 = world.GetVoxel(voxelWorldPos + dirSide1) != Voxels.Air,
-            Side2 = world.GetVoxel(voxelWorldPos + dirSide2) != Voxels.Air,
-            Corner = world.GetVoxel(voxelWorldPos + dir) != Voxels.Air
-        };
     }
 
     // Ensure that color interpolation will be correct for the most recent face.
     private void OrientLastFace()
     {
+        if (aoBuffer[0] + aoBuffer[2] > aoBuffer[1] + aoBuffer[3]) return;
+
         int faceStart = vertices.Count - 4;
         VertexPositionColorTexture v0 = vertices[faceStart];
         VertexPositionColorTexture v1 = vertices[faceStart + 1];
         VertexPositionColorTexture v2 = vertices[faceStart + 2];
         VertexPositionColorTexture v3 = vertices[faceStart + 3];
-
-        if (aoBuffer[0] + aoBuffer[2] > aoBuffer[1] + aoBuffer[3]) return;
         
         vertices[faceStart] = v3;
         vertices[faceStart + 1] = v0;
         vertices[faceStart + 2] = v1;
         vertices[faceStart + 3] = v2;
-    }
-
-    private struct VertexNeighbors
-    {
-        public bool Side1;
-        public bool Side2;
-        public bool Corner;
     }
 }

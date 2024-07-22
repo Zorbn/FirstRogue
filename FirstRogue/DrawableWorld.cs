@@ -17,7 +17,7 @@ public class DrawableWorld
         for (var y = 0; y < World.YChunks; y++)
         for (var z = 0; z < World.ZChunks; z++)
             chunks[x + y * World.XChunks + z * World.XChunks * World.YChunks] =
-                new DrawableVoxelChunk(World.ChunkWidth, World.ChunkHeight, World.ChunkDepth, x, y, z);
+                new DrawableVoxelChunk(x, y, z);
     }
 
     public void Update(GraphicsDevice graphicsDevice)

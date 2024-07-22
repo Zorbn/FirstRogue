@@ -67,6 +67,52 @@ public static class CubeMesh
         }
     };
 
+    public static readonly IVector3[][] VertexAoDirections =
+    {
+        new[]
+        {
+            new IVector3(-1, -1, -1),
+            new IVector3(-1, 1, -1),
+            new IVector3(1, 1, -1),
+            new IVector3(1, -1, -1),
+        },
+        new[]
+        {
+            new IVector3(-1, -1, 1),
+            new IVector3(-1, 1, 1),
+            new IVector3(1, 1, 1),
+            new IVector3(1, -1, 1),
+        },
+        new[]
+        {
+            new IVector3(1, -1, -1),
+            new IVector3(1, -1, 1),
+            new IVector3(1, 1, 1),
+            new IVector3(1, 1, -1),
+        },
+        new[]
+        {
+            new IVector3(-1, -1, -1),
+            new IVector3(-1, -1, 1),
+            new IVector3(-1, 1, 1),
+            new IVector3(-1, 1, -1),
+        },
+        new[]
+        {
+            new IVector3(-1, 1, -1),
+            new IVector3(-1, 1, 1),
+            new IVector3(1, 1, 1),
+            new IVector3(1, 1, -1),
+        },
+        new[]
+        {
+            new IVector3(-1, -1, -1),
+            new IVector3(-1, -1, 1),
+            new IVector3(1, -1, 1),
+            new IVector3(1, -1, -1),
+        }
+    };
+
     public static readonly uint[][] Indices = {
         new uint[] { 0, 2, 1, 0, 3, 2 },
         new uint[] { 0, 1, 2, 0, 2, 3 },

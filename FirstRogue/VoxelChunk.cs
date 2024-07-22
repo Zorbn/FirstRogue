@@ -5,18 +5,19 @@ namespace FirstRogue;
 
 public class VoxelChunk
 {
-    public readonly int Depth;
-    public readonly int Height;
-    public readonly int Width;
+    public const int Depth = 32;
+    public const int Height = 32;
+    public const int Width = 32;
+
+    public const int DepthShift = 5;
+    public const int HeightShift = 5;
+    public const int WidthShift = 5;
 
     public readonly Voxels[] voxels;
 
-    public VoxelChunk(int width, int height, int depth)
+    public VoxelChunk()
     {
-        Width = width;
-        Height = height;
-        Depth = depth;
-        voxels = new Voxels[width * height * depth];
+        voxels = new Voxels[Width * Height * Depth];
     }
 
     public bool Changed { get; private set; }
@@ -63,6 +64,7 @@ public class VoxelChunk
     public Voxels GetVoxelUnchecked(int x, int y, int z)
     {
         int vi = x + y * Width + z * Width * Height;
+
         return voxels[vi];
     }
 

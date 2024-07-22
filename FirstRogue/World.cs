@@ -7,21 +7,13 @@ public class World
 {
     public readonly VoxelChunk[] Chunks;
     
-    public const int ChunkDepth = 32;
-    public const int ChunkHeight = 32;
-    public const int ChunkWidth = 32;
-
-    public const int ChunkDepthShift = 5;
-    public const int ChunkHeightShift = 5;
-    public const int ChunkWidthShift = 5;
-    
     public const int XChunks = 2;
     public const int YChunks = 2;
     public const int ZChunks = 2;
 
-    public const int Depth = ChunkDepth * ZChunks;
-    public const int Height = ChunkHeight * YChunks;
-    public const int Width = ChunkWidth * XChunks;
+    public const int Depth = VoxelChunk.Depth * ZChunks;
+    public const int Height = VoxelChunk.Height * YChunks;
+    public const int Width = VoxelChunk.Width * XChunks;
 
     public World()
     {
@@ -31,7 +23,7 @@ public class World
         for (var y = 0; y < YChunks; y++)
         for (var z = 0; z < ZChunks; z++)
         {
-            var chunk = new VoxelChunk(ChunkWidth, ChunkHeight, ChunkDepth);
+            var chunk = new VoxelChunk();
             Chunks[x + y * XChunks + z * XChunks * YChunks] = chunk;
         }
     }
@@ -64,12 +56,12 @@ public class World
     {
         if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth) return;
 
-        int chunkX = x >> ChunkWidthShift;
-        int chunkY = y >> ChunkHeightShift;
-        int chunkZ = z >> ChunkDepthShift;
-        int subChunkX = x & (ChunkWidth - 1);
-        int subChunkY = y & (ChunkHeight - 1);
-        int subChunkZ = z & (ChunkDepth - 1);
+        int chunkX = x >> VoxelChunk.WidthShift;
+        int chunkY = y >> VoxelChunk.HeightShift;
+        int chunkZ = z >> VoxelChunk.DepthShift;
+        int subChunkX = x & (VoxelChunk.Width - 1);
+        int subChunkY = y & (VoxelChunk.Height - 1);
+        int subChunkZ = z & (VoxelChunk.Depth - 1);
 
         VoxelChunk chunk = GetChunkUnchecked(chunkX, chunkY, chunkZ);
         chunk.SetVoxelUnchecked(subChunkX, subChunkY, subChunkZ, voxel);
@@ -81,17 +73,17 @@ public class World
     {
         if (subChunkX == 0 && GetChunk(chunkX - 1, chunkY, chunkZ) is { } xNegNeighbor) xNegNeighbor.MarkChanged();
 
-        if (subChunkX == ChunkWidth - 1 && GetChunk(chunkX + 1, chunkY, chunkZ) is { } xPosNeighbor)
+        if (subChunkX == VoxelChunk.Width - 1 && GetChunk(chunkX + 1, chunkY, chunkZ) is { } xPosNeighbor)
             xPosNeighbor.MarkChanged();
 
         if (subChunkY == 0 && GetChunk(chunkX, chunkY - 1, chunkZ) is { } yNegNeighbor) yNegNeighbor.MarkChanged();
 
-        if (subChunkY == ChunkHeight - 1 && GetChunk(chunkX, chunkY + 1, chunkZ) is { } yPosNeighbor)
+        if (subChunkY == VoxelChunk.Height - 1 && GetChunk(chunkX, chunkY + 1, chunkZ) is { } yPosNeighbor)
             yPosNeighbor.MarkChanged();
 
         if (subChunkZ == 0 && GetChunk(chunkX, chunkY, chunkZ - 1) is { } zNegNeighbor) zNegNeighbor.MarkChanged();
 
-        if (subChunkZ == ChunkDepth - 1 && GetChunk(chunkX, chunkY, chunkZ + 1) is { } zPosNeighbor)
+        if (subChunkZ == VoxelChunk.Depth - 1 && GetChunk(chunkX, chunkY, chunkZ + 1) is { } zPosNeighbor)
             zPosNeighbor.MarkChanged();
     }
 
@@ -108,12 +100,12 @@ public class World
     {
         if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth) return Voxels.Air;
 
-        int chunkX = x >> ChunkWidthShift;
-        int chunkY = y >> ChunkHeightShift;
-        int chunkZ = z >> ChunkDepthShift;
-        int subChunkX = x & (ChunkWidth - 1);
-        int subChunkY = y & (ChunkHeight - 1);
-        int subChunkZ = z & (ChunkDepth - 1);
+        int chunkX = x >> VoxelChunk.WidthShift;
+        int chunkY = y >> VoxelChunk.HeightShift;
+        int chunkZ = z >> VoxelChunk.DepthShift;
+        int subChunkX = x & (VoxelChunk.Width - 1);
+        int subChunkY = y & (VoxelChunk.Height - 1);
+        int subChunkZ = z & (VoxelChunk.Depth - 1);
 
         VoxelChunk chunk = GetChunkUnchecked(chunkX, chunkY, chunkZ);
         return chunk.GetVoxelUnchecked(subChunkX, subChunkY, subChunkZ);
